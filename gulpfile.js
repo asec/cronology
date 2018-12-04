@@ -17,7 +17,7 @@ gulp.task("server", () => {
 gulp.task("default", () => {
 	gulp.run("server");
 
-	gulp.watch(["./api.js", "./api/**/*.js"], () => {
+	gulp.watch(["./api.js", "./**/*.js"], () => {
 		gulp.run("server");
 	});
 });

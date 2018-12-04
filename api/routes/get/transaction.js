@@ -1,3 +1,5 @@
+var scheduleResolver = require("../../../utils/scheduleResolver.js");
+
 module.exports.getTransaction = (req, res, next, db, config) => {
 
 	var message = {
@@ -20,7 +22,7 @@ module.exports.getTransaction = (req, res, next, db, config) => {
 			return {
 				trid: item.id,
 				name: item.name,
-				schedule: new Date(), // TODO: Az ütemezés alapján legközelebb eső futás idejét visszaadni itt
+				schedule: scheduleResolver.resolve(item.schedule, new Date(item.created)),
 				isRecurring: !!item.isRecurring,
 				isRunning: !!item.isRunning,
 				isCanceled: !!item.isCanceled,

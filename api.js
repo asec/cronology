@@ -1,3 +1,5 @@
-var api = require("./api/api-core.js");
+var api = require("./api/api-core.js"),
+	scheduler = require("./scheduler/scheduler.js");
 
-api.init();
+scheduler.init();
+api.init(scheduler);

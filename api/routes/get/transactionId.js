@@ -1,4 +1,6 @@
-module.exports.getTransactionId = (req, res, next, db, config) => {
+var scheduleResolver = require("../../../utils/scheduleResolver.js");
+
+module.exports.getTransactionId = (req, res, next, db, config, scheduler) => {
 
 	var id = parseInt(req.params.id, 10);
 	if (!id || isNaN(id) || id <= 0)
@@ -31,7 +33,7 @@ module.exports.getTransactionId = (req, res, next, db, config) => {
 		message.item = {
 			trid: item.id,
 			name: item.name,
-			schedule: new Date(), // TODO: Az ütemezés alapján legközelebb eső futás idejét visszaadni itt
+			schedule: scheduleResolver.resolve(item.schedule, new Date(item.created)),
 			isRecurring: !!item.isRecurring,
 			isRunning: !!item.isRunning,
 			isCanceled: !!item.isCanceled,
@@ -63,6 +65,8 @@ module.exports.getTransactionId = (req, res, next, db, config) => {
 					result: item.result
 				};
 			});
+
+			scheduler.add(message.item.trid, "now");
 
 			return res.json(message);
 		});
