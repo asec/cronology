@@ -10,7 +10,8 @@ module.exports = {
 	// MySQL tables:
 	dbt: {
 		TRANSACTIONS: "transactions",
-		STEPS: "transactions_steps"
+		STEPS: "transactions_steps",
+		LOGS: "transactions_logs"
 	}
 
 };

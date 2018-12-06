@@ -12,7 +12,8 @@ module.exports = {
 	{
 		db.dbConnect();
 
-		var q = "SELECT `id`, `schedule` FROM ?? WHERE `isRunning` = 0 AND `isCanceled` = 0 ORDER BY `created` ASC";
+		//var q = "SELECT `id`, `schedule` FROM ?? WHERE `isRunning` = 0 AND `isCanceled` = 0 ORDER BY `created` ASC";
+		var q = "SELECT `id`, `schedule` FROM ?? WHERE `isCanceled` = 0 ORDER BY `created` ASC";
 		db.connection.query(q, [config.dbt.TRANSACTIONS], (err, results, fields) => {
 			if (err)
 			{
