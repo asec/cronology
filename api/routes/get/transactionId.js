@@ -1,6 +1,6 @@
 var scheduleResolver = require("../../../utils/scheduleResolver.js");
 
-module.exports.getTransactionId = (req, res, next, db, config, scheduler) => {
+module.exports.getTransactionId = (req, res, next, db, config) => {
 
 	var id = parseInt(req.params.id, 10);
 	if (!id || isNaN(id) || id <= 0)
@@ -61,12 +61,10 @@ module.exports.getTransactionId = (req, res, next, db, config, scheduler) => {
 					isRunning: !!item.isRunning,
 					created: item.created,
 					started: item.started || false,
-					lasted: item.lasted || 0,
+					duration: item.duration || 0,
 					result: item.result
 				};
 			});
-
-			scheduler.add(message.item.trid, "now");
 
 			return res.json(message);
 		});

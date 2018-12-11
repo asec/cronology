@@ -2,6 +2,7 @@ var db = require("../utils/db.js"),
 	config = require("../config/config.js"),
 	scheduleResolver = require("../utils/scheduleResolver.js"),
 	log = require("./log.js"),
+	profiler = require("../utils/profiler.js"),
 	TransactionStep = require("./transactionStep.js");
 
 class Transaction
@@ -15,6 +16,7 @@ class Transaction
 		this.isFinished = false;
 		this.data = {};
 		this.steps = [];
+		this.totalTime = 0;
 	}
 
 	start()
@@ -40,6 +42,27 @@ class Transaction
 	{
 		this.isRunning = false;
 		this.isFinished = true;
+
+		log.log({
+			trid: this.id,
+			action: "finished transaction",
+			duration: this.totalTime
+		}, (err, results, fields) => {
+			if (err)
+			{
+				console.error("Log on finish: MySQL log error: " + (err.sqlMessage || err.message));
+				return;
+			}
+
+			var q = "UPDATE ?? SET `isRunning` = 0, `isFinished` = 1, `completedSteps` = ? WHERE `id` = ?";
+			db.connection.query(q, [config.dbt.TRANSACTIONS, this.data.completedSteps, this.trid], (err, results, fields) => {
+				if (err)
+				{
+					console.error("Log on finish: MySQL transaction error: " + (err.sqlMessage || err.message));
+					return;
+				}
+			});
+		});
 		console.log(this.trid, "has just finished");
 	}
 
@@ -100,14 +123,14 @@ class Transaction
 			action: "transaction error",
 			data: {
 				message: msg
-			}
+			},
+			duration: profiler.mark()
 		});
 		this.finish();
 	}
 
 	handleLoadSuccess()
 	{
-		//this.finish();
 		var q = "UPDATE ?? SET `isRunning` = 1 WHERE `id` = ?";
 		db.connection.query(q, [config.dbt.TRANSACTIONS, this.trid], (err, results, fields) => {
 			if (err)
@@ -116,18 +139,63 @@ class Transaction
 				return;
 			}
 
-			for (var i = 0; i < this.steps.length; i++)
-			{
-				var step = this.steps[i];
-				if (!step.isRunning)
-				{
-					// TODO: Callback-ből elindítani a következőt a megfelelő ráhagyással ha van
-					step.start();
-					break;
-				}
-			}
+			this.doProgress();
 		});
-		console.log(this.steps);
+	}
+
+	doProgress()
+	{
+		for (var i = 0; i < this.steps.length; i++)
+		{
+			var step = this.steps[i];
+			if (step.result === "none")
+			{
+				console.log("Starting step " + (Math.floor(i + 1) + "/" + this.steps.length));
+				step.start((err, result) => {
+					console.log("Finished step " + (Math.floor(i + 1) + "/" + this.steps.length));
+					if (err)
+					{
+						this.handleLoadError("During step " + (Math.floor(i + 1) + "/" + this.steps.length) + ": MySQL query step error: " + (err.sqlMessage || err.message));
+						return;
+					}
+
+					this.totalTime += profiler.get(true);
+
+					if (result.status !== 200)
+					{
+						this.finish();
+						return;
+					}
+					else
+					{
+						if (i <= this.steps.length - 1)
+						{
+							this.data.completedSteps++;
+							if (this.data.waitAfterStep > 0 && i != this.steps.length - 1)
+							{
+								setTimeout(() => {
+									this.doProgress();
+								}, this.data.waitAfterStep * 1000);
+							}
+							else
+							{
+								this.doProgress();
+							}
+						}
+						else
+						{
+							this.finish();
+						}
+						return;
+					}
+				});
+				break;
+			}
+		}
+		if (i > this.steps.length - 1)
+		{
+			this.finish();
+		}
 	}
 }
 

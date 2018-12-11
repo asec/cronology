@@ -14,10 +14,18 @@ module.exports = {
 			response: cnf.response || "",
 			status: cnf.status || "",
 			date: new Date(),
-			duration: 0
+			duration: cnf.duration || 0
 		};
 
 		item.data = JSON.stringify(item.data);
+		if (item.request)
+		{
+			item.request = JSON.stringify(item.request);
+		}
+		if (item.response)
+		{
+			item.response = JSON.stringify(item.response);
+		}
 
 		var q = "INSERT INTO `" + config.dbt.LOGS + "` SET ?";
 		db.connection.query(q, item, (error, results, fields) => {

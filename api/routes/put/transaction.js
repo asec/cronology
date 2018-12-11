@@ -1,4 +1,4 @@
-module.exports.putTransaction = (req, res, next, db, config) => {
+module.exports.putTransaction = (req, res, next, db, config, scheduler) => {
 
 	var data = {
 		name: req.body.name,
@@ -48,11 +48,17 @@ module.exports.putTransaction = (req, res, next, db, config) => {
 			db.query(q, [config.dbt.STEPS, values], (err, results, fields) => {
 				if (err)
 				{
+					q = "DELETE FROM ?? WHERE `trid` = ?";
+					db.query(q, [config.dbt.STEPS, message.trid]);
+					q = "DELETE FROM ?? WHERE `id` = ?";
+					db.query(q, [config.dbt.TRANSACTIONS, message.trid]);
 					return res.json({
 						success: false,
 						error: "MySQL query steps error: " + (err.sqlMessage || err.message)
 					});
 				}
+
+				scheduler.add(message.trid, data.schedule);
 
 				return res.json(message);
 			});

@@ -30,7 +30,7 @@ module.exports = {
 
 		// API: Create a transaction
 		app.put("/transaction", (req, res, next) => {
-			apiRoutes.putTransaction(req, res, next, db.connection, config);
+			apiRoutes.putTransaction(req, res, next, db.connection, config, scheduler);
 		});
 
 		// API: Get a list of transactions
@@ -40,7 +40,7 @@ module.exports = {
 
 		// API: Get a transaction
 		app.get("/transaction/:id", (req, res, next) => {
-			apiRoutes.getTransactionId(req, res, next, db.connection, config, scheduler);
+			apiRoutes.getTransactionId(req, res, next, db.connection, config);
 		});
 	}
 
