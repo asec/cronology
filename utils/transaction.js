@@ -4,12 +4,20 @@ var db = require("../utils/db.js"),
 	log = require("./log.js"),
 	profiler = require("../utils/profiler.js"),
 	TransactionStep = require("./transactionStep.js");
+const EventEmitter = require("events");
 
-class Transaction
+class Transaction extends EventEmitter
 {
+
+	/**
+	 * Events:
+	 * starting, loaded, started, step.starting, step.finished
+	 * error, finish, complete
+	 */
 
 	constructor(trid, schedule)
 	{
+		super();
 		this.trid = trid;
 		this.date = scheduleResolver.resolve(schedule);
 		this.isRunning = false;
@@ -17,6 +25,28 @@ class Transaction
 		this.data = {};
 		this.steps = [];
 		this.totalTime = 0;
+
+		this.on("error", this.handleError);
+		//this.on("starting", this.load);
+		//this.on("loaded", this.setRunningFlag);
+		//this.on("started", this.doProgress);
+		this.on("finish", this.finish);
+	}
+
+	handleError(phase, message)
+	{
+		if (phase === "load" || phase === "step")
+		{
+			log.log({
+				trid: this.trid,
+				action: "transaction error",
+				data: {
+					message: msg
+				},
+				duration: profiler.mark()
+			});
+			this.emit("finish");
+		}
 	}
 
 	start()
@@ -25,15 +55,15 @@ class Transaction
 		this.isFinished = false;
 		log.log({
 			trid: this.trid,
-			action: "starting transaction"
+			action: "transaction starting"
 		}, (err, results, fields) => {
 			if (err)
 			{
-				console.error("Log before load: MySQL log error: " + (err.sqlMessage || err.message));
+				this.emit("error", "start", "Log before load: MySQL log error: " + (err.sqlMessage || err.message));
 				return;
 			}
 
-			console.log(this.trid, "has just started");
+			this.emit("starting");
 			this.load();
 		});
 	}
@@ -45,12 +75,12 @@ class Transaction
 
 		log.log({
 			trid: this.id,
-			action: "finished transaction",
+			action: "transaction finished",
 			duration: this.totalTime
 		}, (err, results, fields) => {
 			if (err)
 			{
-				console.error("Log on finish: MySQL log error: " + (err.sqlMessage || err.message));
+				this.emit("error", "finish", "Log on finish: MySQL log error: " + (err.sqlMessage || err.message));
 				return;
 			}
 
@@ -58,12 +88,13 @@ class Transaction
 			db.connection.query(q, [config.dbt.TRANSACTIONS, this.data.completedSteps, this.trid], (err, results, fields) => {
 				if (err)
 				{
-					console.error("Log on finish: MySQL transaction error: " + (err.sqlMessage || err.message));
+					this.emit("error", "finish", "Log on finish: MySQL transaction error: " + (err.sqlMessage || err.message));
 					return;
 				}
+
+				this.emit("complete");
 			});
 		});
-		console.log(this.trid, "has just finished");
 	}
 
 	load()
@@ -74,13 +105,13 @@ class Transaction
 			db.connection.query(q, [config.dbt.TRANSACTIONS, this.trid], (err, results, fields) => {
 				if (err)
 				{
-					this.handleLoadError("Loading transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
+					this.emit("error", "load", "Loading transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
 					return;
 				}
 
 				if (results.length !== 1)
 				{
-					this.handleLoadError("Loading transaction: The following transaction could not be found: " + this.trid);
+					this.emit("error", "load", "Loading transaction: The following transaction could not be found: " + this.trid);
 					return;
 				}
 
@@ -94,7 +125,7 @@ class Transaction
 				db.connection.query(q, [config.dbt.STEPS, this.trid], (err, results, fields) => {
 					if (err)
 					{
-						this.handleLoadError("Loading transaction steps: MySQL query steps error: " + (err.sqlMessage || err.message));
+						this.emit("error", "load", "Loading transaction steps: MySQL query steps error: " + (err.sqlMessage || err.message));
 						return;
 					}
 
@@ -107,38 +138,24 @@ class Transaction
 						return new TransactionStep(newItem);
 					});
 
-					this.handleLoadSuccess();
-
+					this.emit("loaded");
+					this.setRunningFlag();
 				});
-
 			});
 		}
 	}
 
-	handleLoadError(msg)
-	{
-		console.error(msg);
-		log.log({
-			trid: this.trid,
-			action: "transaction error",
-			data: {
-				message: msg
-			},
-			duration: profiler.mark()
-		});
-		this.finish();
-	}
-
-	handleLoadSuccess()
+	setRunningFlag()
 	{
 		var q = "UPDATE ?? SET `isRunning` = 1 WHERE `id` = ?";
 		db.connection.query(q, [config.dbt.TRANSACTIONS, this.trid], (err, results, fields) => {
 			if (err)
 			{
-				this.handleLoadError("Starting transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
+				this.emit("error", "load", "Starting transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
 				return;
 			}
 
+			this.emit("started");
 			this.doProgress();
 		});
 	}
@@ -150,28 +167,28 @@ class Transaction
 			var step = this.steps[i];
 			if (step.result === "none")
 			{
-				console.log("Starting step " + (Math.floor(i + 1) + "/" + this.steps.length));
-				step.start((err, result) => {
-					console.log("Finished step " + (Math.floor(i + 1) + "/" + this.steps.length));
-					if (err)
-					{
-						this.handleLoadError("During step " + (Math.floor(i + 1) + "/" + this.steps.length) + ": MySQL query step error: " + (err.sqlMessage || err.message));
-						return;
-					}
+				this.emit("step.starting", i);
 
+				step.on("error", (err) => {
+					this.emit("error", "step", "During step " + (Math.floor(i + 1) + "/" + this.steps.length) + ": MySQL query step error: " + (err.sqlMessage || err.message));
+					this.emit("step.finished", i, err, null);
+				});
+				step.on("complete", (result) => {
+					this.emit("step.finished", i, null, result);
 					this.totalTime += profiler.get(true);
-
 					if (result.status !== 200)
 					{
-						this.finish();
+						this.emit("finish");
 						return;
 					}
 					else
 					{
-						if (i <= this.steps.length - 1)
+						var isThereMore = (i <= this.steps.length - 1);
+						var isLastStep = (i === this.steps.length - 1);
+						if (isThereMore)
 						{
 							this.data.completedSteps++;
-							if (this.data.waitAfterStep > 0 && i != this.steps.length - 1)
+							if (this.data.waitAfterStep > 0 && !isLastStep)
 							{
 								setTimeout(() => {
 									this.doProgress();
@@ -184,17 +201,20 @@ class Transaction
 						}
 						else
 						{
-							this.finish();
+							//this.finish();
+							this.emit("finish");
 						}
 						return;
 					}
 				});
+				step.start();
 				break;
 			}
 		}
 		if (i > this.steps.length - 1)
 		{
-			this.finish();
+			//this.finish();
+			this.emit("finish");
 		}
 	}
 }

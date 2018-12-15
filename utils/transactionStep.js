@@ -4,166 +4,172 @@ var db = require("../utils/db.js"),
 	profiler = require("../utils/profiler.js"),
 	https = require("https"),
 	http = require("http");
+const EventEmitter = require("events");
 
-class TransactionStep
+class TransactionStep extends EventEmitter
 {
 
-	constructor(item)
+	/**
+	 * Events: error, complete
+	 */
+
+	constructor(dbRecord)
 	{
-		for (var i in item)
+		super();
+		for (var i in dbRecord)
 		{
-			this[i] = item[i];
+			this[i] = dbRecord[i];
 		}
 	}
 
-	start(callback)
+	start()
 	{
 		profiler.start();
 		var q = "UPDATE ?? SET `isRunning` = 1, `started` = ? WHERE `id` = ?";
 		db.connection.query(q, [config.dbt.STEPS, new Date(), this.id], (err, results, fields) => {
-			if (err && callback instanceof Function)
+			if (err)
 			{
-				return callback(err, null);
+				this.emit("error", err);
+				return;
 			}
+
+			this.isRunning = true;
+			this.started = new Date();
 
 			log.log({
 				trid: this.trid,
 				stid: this.id,
-				action: "starting step",
+				action: "step starting",
 				duration: profiler.mark()
 			});
 
-			this.isRunning = true;
-			this.started = new Date();
-			var url = this.url.split("//");
-			var connector = null;
-			if (url[0] === "http:")
-			{
-				connector = http;
-			}
-			else if (url[0] === "https:")
-			{
-				connector = https;
-			}
-			else
-			{
-				connector = http;
-			}
-			var request = {};
-			var response = {
-				status: 0,
-				headers: {}
-			};
-			url = new URL(this.url);
-			url.method = "GET";
-			var req = connector.request(url, (res) => {
-				response.status = res.statusCode;
-				response.headers = res.headers;
-				var body = "";
-				res.on("data", (data) => {
-					body += data;
-				});
-				res.on("end", () => {
-					log.log({
-						trid: this.trid,
-						stid: this.id,
-						action: "response arrived",
-						request: request,
-						response: {
-							headers: response.headers,
-							body: body
-						},
-						status: response.status,
-						duration: profiler.mark()
-					}, (error, results, fields) => {
-						if (error)
-						{
-							if (callback instanceof Function)
-							{
-								callback(error, null);
-							}
-							return;
-						}
-
-						if (response.status !== 200)
-						{
-							this.result = "error";
-							var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
-							db.connection.query(q, [config.dbt.STEPS, profiler.get(true), "error", this.id], (error, results, fields) => {
-								if (error)
-								{
-									if (callback instanceof Function)
-									{
-										callback(error, null);
-									}
-									return;
-								}
-
-								if (callback instanceof Function)
-								{
-									callback(null, response);
-								}
-							});
-
-						}
-						else
-						{
-							this.result = "success";
-							var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
-							db.connection.query(q, [config.dbt.STEPS, profiler.get(true), "success", this.id], (error, results, fields) => {
-								if (error)
-								{
-									if (callback instanceof Function)
-									{
-										callback(error, null);
-									}
-									return;
-								}
-
-								if (callback instanceof Function)
-								{
-									return callback(null, response);
-								}
-							});
-						}
-					});
-				});
-			});
-			req.on("socket", (socket) => {
-				socket.setTimeout(600000); // 10 mins
-				socket.on("timeout", () => {
-					req.abort();
-				});
-			});
-			req.on("error", (err) => {
-				log.log({
-					trid: this.trid,
-					stid: this.id,
-					action: "error on step",
-					data: {
-						message: err.code + ":" + err.message
-					},
-					request: request,
-					duration: profiler.mark()
-				}, (error, results, fields) => {
-					this.result = "error";
-					var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
-					db.connection.query(q, [config.dbt.STEPS, 1, "error", this.id]);
-					if (error && callback instanceof Function)
-					{
-						return callback(error, null);
-					}
-
-					if (callback instanceof Function)
-					{
-						return callback(err, null);
-					}
-				});
-			});
-			req.end();
-			request = req.output;
+			this.registerRequest();
 		});
-		console.log("Starting step: ", this.id);
+	}
+
+	registerRequest()
+	{
+		var url = this.url.split("//");
+		var connector;
+		if (url[0] === "https:")
+		{
+			connector = https;
+		}
+		else
+		{
+			connector = http;
+		}
+		var request = {};
+		var response = {
+			status: 0,
+			headers: {},
+			body: ""
+		};
+		url = new URL(this.url);
+		url.method = "GET";
+		var req = connector.request(url, (res) => {
+			response.status = res.statusCode;
+			response.headers = res.headers;
+			res.on("data", (data) => {
+				response.body += data;
+			});
+			res.on("end", () => {
+				this.handleRequestFinished(request, response);
+			});
+		});
+		req.on("socket", (socket) => {
+			socket.setTimeout(config.api.executionTimeout);
+			socket.on("timeout", () => {
+				req.abort();
+			});
+		});
+		req.on("error", (err) => {
+			this.handleRequestError(request, err);
+		});
+		req.end();
+		request = req.output;
+	}
+
+	handleRequestFinished(request, response)
+	{
+		log.log({
+			trid: this.trid,
+			stid: this.id,
+			action: "step response arrived",
+			request: request,
+			response: {
+				headers: response.headers,
+				body: response.body
+			},
+			status: response.status,
+			duration: profiler.mark()
+		}, (error, results, fields) => {
+			if (error)
+			{
+				this.emit("error", error);
+				return;
+			}
+
+			this.handleResponse(response);
+		});
+	}
+
+	handleRequestError(request, err)
+	{
+		log.log({
+			trid: this.trid,
+			stid: this.id,
+			action: "step error",
+			data: {
+				message: err.code + ":" + err.message
+			},
+			request: request,
+			duration: profiler.mark()
+		}, (error, results, fields) => {
+			this.result = "error";
+			var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
+			db.connection.query(q, [config.dbt.STEPS, profiler.get(true), this.result, this.id]);
+			if (error)
+			{
+				this.emit("error", error);
+				return;
+			}
+
+			this.emit("error", err);
+		});
+	}
+
+	handleResponse(response)
+	{
+		if (response.status !== 200)
+		{
+			this.result = "error";
+			var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
+			db.connection.query(q, [config.dbt.STEPS, profiler.get(true), this.result, this.id], (error, results, fields) => {
+				if (error)
+				{
+					this.emit("error", error);
+					return;
+				}
+
+				this.emit("complete", response);
+			});
+
+		}
+		else
+		{
+			this.result = "success";
+			var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
+			db.connection.query(q, [config.dbt.STEPS, profiler.get(true), this.result, this.id], (error, results, fields) => {
+				if (error)
+				{
+					this.emit("error", error);
+					return;
+				}
+
+				this.emit("complete", response);
+			});
+		}
 	}
 
 }

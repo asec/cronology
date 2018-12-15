@@ -1,73 +1,80 @@
 var scheduleResolver = require("../../../utils/scheduleResolver.js");
+const EventEmitter = require("events");
 
-module.exports.getTransactionId = (req, res, next, db, config) => {
+class ApiFunction extends EventEmitter
+{
 
-	var id = parseInt(req.params.id, 10);
-	if (!id || isNaN(id) || id <= 0)
+	process(req, res, next, db, config)
 	{
-		id = 0;
-	}
-	var message = {
-		success: true
-	};
-
-	var q = "SELECT * FROM ?? WHERE `id` = ?";
-	db.query(q, [config.dbt.TRANSACTIONS, id], (err, results, fields) => {
-		if (err)
+		var id = parseInt(req.params.id, 10);
+		if (!id || isNaN(id) || id <= 0)
 		{
-			return res.json({
-				success: false,
-				error: "MySQL query transaction error: " + (err.sqlMessage || err.message)
-			});
+			id = 0;
 		}
-
-		if (results.length !== 1)
-		{
-			return res.json({
-				success: false,
-				error: "The following transaction could not be found: " + id
-			});
-		}
-
-		var item = results[0];
-		message.item = {
-			trid: item.id,
-			name: item.name,
-			schedule: scheduleResolver.resolve(item.schedule, new Date(item.created)),
-			isRecurring: !!item.isRecurring,
-			isRunning: !!item.isRunning,
-			isCanceled: !!item.isCanceled,
-			completedSteps: item.completedSteps,
-			numSteps: item.numSteps,
-			waitAfterStep: item.waitAfterStep,
-			created: item.created,
-			steps: []
+		var message = {
+			success: true
 		};
 
-		q = "SELECT * FROM ?? WHERE `trid` = ? ORDER BY `id` ASC";
-		db.query(q, [config.dbt.STEPS, id], (err, results, fields) => {
+		var q = "SELECT * FROM ?? WHERE `id` = ?";
+		db.query(q, [config.dbt.TRANSACTIONS, id], (err, results, fields) => {
 			if (err)
 			{
 				return res.json({
 					success: false,
-					error: "MySQL query transaction steps error: " + (err.sqlMessage || err.message)
+					error: "MySQL query transaction error: " + (err.sqlMessage || err.message)
 				});
 			}
 
-			message.item.steps = results.map((item, key) => {
-				return {
-					stid: item.id,
-					url: item.url,
-					isRunning: !!item.isRunning,
-					created: item.created,
-					started: item.started || false,
-					duration: item.duration || 0,
-					result: item.result
-				};
+			if (results.length !== 1)
+			{
+				return res.json({
+					success: false,
+					error: "The following transaction could not be found: " + id
+				});
+			}
+
+			var item = results[0];
+			message.item = {
+				trid: item.id,
+				name: item.name,
+				schedule: scheduleResolver.resolve(item.schedule, new Date(item.created)),
+				isRecurring: !!item.isRecurring,
+				isRunning: !!item.isRunning,
+				isCanceled: !!item.isCanceled,
+				completedSteps: item.completedSteps,
+				numSteps: item.numSteps,
+				waitAfterStep: item.waitAfterStep,
+				created: item.created,
+				steps: []
+			};
+
+			q = "SELECT * FROM ?? WHERE `trid` = ? ORDER BY `id` ASC";
+			db.query(q, [config.dbt.STEPS, id], (err, results, fields) => {
+				if (err)
+				{
+					return res.json({
+						success: false,
+						error: "MySQL query transaction steps error: " + (err.sqlMessage || err.message)
+					});
+				}
+
+				message.item.steps = results.map((item, key) => {
+					return {
+						stid: item.id,
+						url: item.url,
+						isRunning: !!item.isRunning,
+						created: item.created,
+						started: item.started || false,
+						duration: item.duration || 0,
+						result: item.result
+					};
+				});
+
+				return res.json(message);
 			});
-
-			return res.json(message);
 		});
-	});
+	}
 
-};
+}
+
+module.exports = ApiFunction;

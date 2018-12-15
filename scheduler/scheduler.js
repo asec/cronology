@@ -6,13 +6,11 @@ module.exports = {
 
 	queue: [],
 	interval: null,
-	tickrate: 300,
 
 	init: function()
 	{
 		db.dbConnect();
 
-		//var q = "SELECT `id`, `schedule` FROM ?? WHERE `isRunning` = 0 AND `isCanceled` = 0 ORDER BY `created` ASC";
 		var q = "SELECT `id`, `schedule` FROM ?? WHERE `isCanceled` = 0 AND `isFinished` = 0 ORDER BY `created` ASC";
 		db.connection.query(q, [config.dbt.TRANSACTIONS], (err, results, fields) => {
 			if (err)
@@ -31,7 +29,7 @@ module.exports = {
 		// Starting heartbeat:
 		this.interval = setInterval(() => {
 			this.tick();
-		}, this.tickrate);
+		}, config.scheduler.tickrate);
 	},
 
 	tick: function()
@@ -50,13 +48,30 @@ module.exports = {
 
 			if (!item.isRunning && item.date <= now)
 			{
+				item.on("error", (phase, message) => {
+					console.error(message);
+				});
+				item.on("starting", () => {
+					console.log(item.trid, "is starting");
+				});
+				item.on("started", () => {
+					console.log(item.trid, "has just started");
+				});
+				item.on("step.starting", (index) => {
+					console.log("Starting step " + Math.floor(index + 1) + "/" + item.steps.length + " (" + item.steps[index].id + ")");
+				});
+				item.on("step.finished", (index, err, result) => {
+					console.log("Finished step " + Math.floor(index + 1) + "/" + item.steps.length + " (" + item.steps[index].id + ")");
+				});
+				item.on("complete", () => {
+					console.log(item.trid, "has just finished");
+				});
 				item.start();
 				return true;
 			}
 
 			return true;
 		});
-		//console.log("Scheduler tick", this.queue);
 	},
 
 	add: function(trid, schedule)

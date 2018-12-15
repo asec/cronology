@@ -8,19 +8,19 @@ module.exports = {
 	dbConnect: function()
 	{
 		var self = this;
-		console.error("Connecting");
+		console.error("Connecting to database");
 		self.connection = mysql.createConnection(config.mysql);
 		self.connection.connect((err) => {
 			if (err)
 			{
-				console.error("Error while connecting:", err.code);
+				console.error("Error while connecting to database:", err.code);
 				setTimeout(() => {
 					self.dbConnect();
 				}, 100);
 			}
 			else
 			{
-				console.error("Connected");
+				console.error("CONNECTED to database");
 			}
 		});
 		self.connection.on("error", (err) => {

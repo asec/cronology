@@ -17,10 +17,11 @@ module.exports = {
 		app.use(bodyParser.json());
 		app.use(bodyParser.urlencoded({extended: true}));
 
-		app.listen(3000, () => {
-			console.log("Server started on :3000");
+		app.listen(config.api.port, () => {
+			console.log("Server started on " + config.api.port);
 		});
 
+		// TODO: Link or redirect to the github page
 		app.get("/", (req, res, next) => {
 			res.json({
 				test: "Valami",
@@ -30,17 +31,23 @@ module.exports = {
 
 		// API: Create a transaction
 		app.put("/transaction", (req, res, next) => {
-			apiRoutes.putTransaction(req, res, next, db.connection, config, scheduler);
+			const route = new apiRoutes.put.transaction();
+			route.on("success", (message, schedule) => {
+				scheduler.add(message.trid, schedule);
+			});
+			route.process(req, res, next, db.connection, config);
 		});
 
 		// API: Get a list of transactions
 		app.get("/transaction", (req, res, next) => {
-			apiRoutes.getTransaction(req, res, next, db.connection, config);
+			const route = new apiRoutes.get.transaction();
+			route.process(req, res, next, db.connection, config);
 		});
 
 		// API: Get a transaction
 		app.get("/transaction/:id", (req, res, next) => {
-			apiRoutes.getTransactionId(req, res, next, db.connection, config);
+			const route = new apiRoutes.get.transactionId();
+			route.process(req, res, next, db.connection, config);
 		});
 	}
 
