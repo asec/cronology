@@ -1,4 +1,5 @@
-const EventEmitter = require("events");
+const EventEmitter = require("events"),
+	sr = require("../../../utils/scheduleResolver.js");
 
 class ApiFunction extends EventEmitter
 {
@@ -10,7 +11,8 @@ class ApiFunction extends EventEmitter
 			schedule: req.body.schedule,
 			waitAfterStep: parseInt(req.body.waitAfterStep, 10),
 			steps: req.body.steps,
-			numSteps: 0
+			numSteps: 0,
+			stepsGetterUrl: req.body.stepsGetterUrl || ""
 		};
 		if (!(data.steps instanceof Array) || !data.steps)
 		{
@@ -23,14 +25,40 @@ class ApiFunction extends EventEmitter
 		data.steps = data.steps.map((value, key) => {
 			return value.url;
 		});
+		data.steps = data.steps.filter((value, key) => {
+			return !!value;
+		});
+		if (data.stepsGetterUrl && data.steps.length > 0)
+		{
+			return res.json({
+				success: false,
+				error: "You can't pass a stepsGetterUrl AND an array of steps to this endpoint. You can have only one of them."
+			});
+		}
+		if (!data.stepsGetterUrl && !data.steps.length)
+		{
+			return res.json({
+				success: false,
+				error: "You need to either specify the steps that will be executed in this transaction or pass a stepsGetterUrl."
+			});
+		}
 		data.numSteps = data.steps.length;
 
 		var message = {
 			success: true
 		};
 
-		var q = "INSERT INTO ?? (`owner`, `name`, `schedule`, `numSteps`, `waitAfterStep`, `created`) VALUES (?, ?, ?, ?, ?, ?)";
-		db.query(q, [config.dbt.TRANSACTIONS, 2, data.name, data.schedule, data.numSteps, data.waitAfterStep, new Date()], (err, results, fields) => {
+		var date = sr.resolve(data.schedule);
+		if (!date)
+		{
+			return res.json({
+				success: false,
+				error: "Scheduling error: It was not possible to establish a valid starting date based on the given schedule"
+			});
+		}
+
+		var q = "INSERT INTO ?? (`owner`, `name`, `schedule`, `isRecurring`, `stepsGetterUrl`, `numSteps`, `waitAfterStep`, `created`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+		db.query(q, [config.dbt.TRANSACTIONS, 2, data.name, data.schedule, sr.isRepeatable ? 1 : 0, data.stepsGetterUrl, data.numSteps, data.waitAfterStep, new Date()], (err, results, fields) => {
 			if (err)
 			{
 				return res.json({
@@ -70,6 +98,10 @@ class ApiFunction extends EventEmitter
 			}
 			else
 			{
+				if (data.stepsGetterUrl)
+				{
+					this.emit("success", message, data.schedule);
+				}
 				return res.json(message);
 			}
 		});

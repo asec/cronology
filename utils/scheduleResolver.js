@@ -34,7 +34,6 @@ module.exports = {
 				if (cron.length === 5)
 				{
 					var success = true;
-					var isRepeatable = false;
 					for (var i = 0; i < cron.length; i++)
 					{
 						var part = cron[i].match(cronFormat);
@@ -131,7 +130,6 @@ module.exports = {
 
 						if (success)
 						{
-							isRepeatable = true;
 							// After we established a set of valid values for each component we are beginning to look for a suitable date.
 							var currentTime = new Date(now).getTime();
 							var finishTime = currentTime + 1000 * 60 * 60 * 24 * 365 * 5;
@@ -147,7 +145,7 @@ module.exports = {
 									validValues.dayWeek.indexOf(current.getUTCDay()) > -1
 								)
 								{
-									this.isRepeatable = isRepeatable;
+									this.isRepeatable = true;
 									date = current;
 									break;
 								}

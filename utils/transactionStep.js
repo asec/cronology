@@ -127,8 +127,8 @@ class TransactionStep extends EventEmitter
 			duration: profiler.mark()
 		}, (error, results, fields) => {
 			this.result = "error";
-			var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
-			db.connection.query(q, [config.dbt.STEPS, profiler.get(true), this.result, this.id]);
+			var q = "UPDATE ?? SET `isRunning` = ?, `duration` = ?, `result` = ? WHERE `id` = ?";
+			db.connection.query(q, [config.dbt.STEPS, 0, profiler.get(true), this.result, this.id]);
 			if (error)
 			{
 				this.emit("error", error);
@@ -144,8 +144,8 @@ class TransactionStep extends EventEmitter
 		if (response.status !== 200)
 		{
 			this.result = "error";
-			var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
-			db.connection.query(q, [config.dbt.STEPS, profiler.get(true), this.result, this.id], (error, results, fields) => {
+			var q = "UPDATE ?? SET `isRunning` = ?, `duration` = ?, `result` = ? WHERE `id` = ?";
+			db.connection.query(q, [config.dbt.STEPS, 0, profiler.get(true), this.result, this.id], (error, results, fields) => {
 				if (error)
 				{
 					this.emit("error", error);
@@ -159,8 +159,8 @@ class TransactionStep extends EventEmitter
 		else
 		{
 			this.result = "success";
-			var q = "UPDATE ?? SET `duration` = ?, `result` = ? WHERE `id` = ?";
-			db.connection.query(q, [config.dbt.STEPS, profiler.get(true), this.result, this.id], (error, results, fields) => {
+			var q = "UPDATE ?? SET `isRunning` = ?, `duration` = ?, `result` = ? WHERE `id` = ?";
+			db.connection.query(q, [config.dbt.STEPS, 0, profiler.get(true), this.result, this.id], (error, results, fields) => {
 				if (error)
 				{
 					this.emit("error", error);

@@ -43,6 +43,16 @@ module.exports = {
 
 			if (item.isFinished)
 			{
+				if (item.data && item.data.isRecurring)
+				{
+					item.on("error", (phase, message) => {
+						console.error(message);
+					});
+					item.on("schedule.complete", (trid, schedule) => {
+						this.add(trid, schedule);
+					});
+					item.scheduleAgain();
+				}
 				return false;
 			}
 
