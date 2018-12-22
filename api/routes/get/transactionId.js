@@ -16,10 +16,17 @@ class ApiFunction extends EventEmitter
 				return;
 			}
 
+			if (!item)
+			{
+				this.emit("error", new Error("The transaction does not exists."));
+				return;
+			}
+
 			var items = [item];
 			items = items.map((item, key) => {
 				return {
 					trid: item.id,
+					originator: item.originator,
 					owner: item.owner,
 					name: item.name,
 					schedule: item.schedule,

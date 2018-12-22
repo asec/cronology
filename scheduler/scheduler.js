@@ -71,7 +71,7 @@ class Scheduler  extends EventEmitter
 
 			if (item.isFinished)
 			{
-				if (item.entity.isRecurring)
+				if (item.entity.isRecurring && !item.entity.isCanceled)
 				{
 					item.on("error", (phase, message) => {
 						console.error(message);
@@ -103,6 +103,9 @@ class Scheduler  extends EventEmitter
 				});
 				item.on("complete", () => {
 					console.log(item.trid, "has just finished");
+				});
+				item.on("canceled", (cancelDate) => {
+					console.log(item.trid, "canceled on ", cancelDate);
 				});
 				item.start();
 				return true;

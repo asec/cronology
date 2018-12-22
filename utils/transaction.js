@@ -17,14 +17,16 @@ class Transaction extends EventEmitter
 		this.isRunning = false;
 		this.isFinished = false;
 		this.request = null;
+		this.timeout = null;
 
 		this.on("error", this.handleError);
+		this.on("canceled", this.handleCanceled);
 		this.on("finish", this.finish);
 	}
 
 	handleError(phase, message)
 	{
-		if (phase === "load" || phase === "step")
+		if (phase === "load" || phase === "step" || phase === "canceled")
 		{
 			schemas.Log.create({
 				transaction: this.trid,
@@ -37,6 +39,20 @@ class Transaction extends EventEmitter
 			});
 			this.emit("finish");
 		}
+	}
+
+	handleCanceled(date)
+	{
+		schemas.Log.create({
+			transaction: this.trid,
+			action: "transaction canceled",
+			data: {
+				date: date
+			},
+			duration: profiler.mark()
+		});
+
+		this.emit("finish");
 	}
 
 	finish()
@@ -52,7 +68,7 @@ class Transaction extends EventEmitter
 
 		if (this.entity)
 		{
-			this.entity.updateOne({ isRunning: 0, isFinished: !this.entity.isRecurring, completedSteps: this.entity.completedSteps }, (err, r) => {
+			this.entity.updateOne({ isRunning: false, isFinished: !this.entity.isRecurring, completedSteps: this.entity.completedSteps }, (err, r) => {
 				if (err)
 				{
 					this.emit("error", "load", err.message);
@@ -260,16 +276,19 @@ class Transaction extends EventEmitter
 						this.emit("error", "step", err.message);
 					});
 					this.request.on("request.error", (request, err) => {
-						schemas.Log.create({
-							transaction: this.trid,
-							step: step.id,
-							action: "step error",
-							data: {
-								message: err.code + ":" + err.message,
-								request: request
-							},
-							duration: profiler.mark()
-						});
+						if (!this.entity.isCanceled)
+						{
+							schemas.Log.create({
+								transaction: this.trid,
+								step: step.id,
+								action: "step error",
+								data: {
+									message: err.code + ":" + err.message,
+									request: request
+								},
+								duration: profiler.mark()
+							});
+						}
 
 						step.updateOne({ isRunning: false, duration: profiler.get(true), result: "error" }, (error, r) => {
 							step.result = "error";
@@ -279,8 +298,11 @@ class Transaction extends EventEmitter
 								return;
 							}
 
-							this.emit("error", "step", "During step " + (Math.floor(i + 1) + "/" + this.entity.steps.length) + ": " + err.message);
-							this.emit("step.finished", i, err, null);
+							if (!this.entity.isCanceled)
+							{
+								this.emit("error", "step", "During step " + (Math.floor(i + 1) + "/" + this.entity.steps.length) + ": " + err.message);
+								this.emit("step.finished", i, err, null);
+							}
 						});
 					});
 					this.request.on("request.complete", (request, response, data) => {
@@ -331,7 +353,7 @@ class Transaction extends EventEmitter
 									this.entity.completedSteps++;
 									if (this.entity.waitAfterStep > 0 && !isLastStep)
 									{
-										setTimeout(() => {
+										this.timeout = setTimeout(() => {
 											this.doProgress();
 										}, this.entity.waitAfterStep * 1000);
 									}
@@ -435,6 +457,18 @@ class Transaction extends EventEmitter
 				});
 			}
 		});
+	}
+
+	cancel()
+	{
+		clearTimeout(this.timeout);
+		this.timeout = null;
+		this.entity.isCanceled = true;
+		if (this.request)
+		{
+			this.request.abort();
+		}
+		this.emit("canceled", new Date());
 	}
 
 }

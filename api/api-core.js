@@ -75,6 +75,21 @@ module.exports = {
 			});
 			route.process(req);
 		});
+
+		// API: Cancel a transaction
+		app.post("/transaction/:id/cancel", (req, res, next) => {
+			const route = new apiRoutes.post.transactionIdCancel();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req, scheduler);
+		});
 	}
 
 };

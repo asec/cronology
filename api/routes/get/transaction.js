@@ -28,6 +28,7 @@ class ApiFunction extends EventEmitter
 			items = items.map((item, key) => {
 				return {
 					trid: item.id,
+					originator: item.originator,
 					owner: item.owner,
 					name: item.name,
 					schedule: item.schedule,

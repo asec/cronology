@@ -71,7 +71,7 @@ class Request extends EventEmitter
 			this.req.on("socket", (socket) => {
 				socket.setTimeout(config.api.executionTimeout);
 				socket.on("timeout", () => {
-					req.abort();
+					this.req.abort();
 				});
 			});
 			this.req.on("error", (err) => {
@@ -94,6 +94,16 @@ class Request extends EventEmitter
 	handleRequestFinished(request, response, data)
 	{
 		this.emit("request.complete", request, response, data);
+	}
+
+	isFinished()
+	{
+		return this.req.finished;
+	}
+
+	abort()
+	{
+		return this.req.abort();
 	}
 }
 
