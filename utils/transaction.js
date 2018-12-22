@@ -1,37 +1,24 @@
-var db = require("../utils/db.js"),
-	config = require("../config/config.js"),
-	scheduleResolver = require("../utils/scheduleResolver.js"),
-	log = require("./log.js"),
-	profiler = require("../utils/profiler.js"),
-	TransactionStep = require("./transactionStep.js"),
-	https = require("https"),
-	http = require("http");
-const EventEmitter = require("events");
+const EventEmitter = require("events"),
+	schemas = require("../model/index.js"),
+	sr = require("./scheduleResolver.js"),
+	profiler = require("./profiler.js"),
+	Request = require("./request.js");
 
 class Transaction extends EventEmitter
 {
-
-	/**
-	 * Events:
-	 * starting, loaded, started, step.starting, step.finished, schedule.complete
-	 * error, finish, complete
-	 */
 
 	constructor(trid, schedule)
 	{
 		super();
 		this.trid = trid;
-		this.date = scheduleResolver.resolve(schedule);
+		this.entity = null;
+		this.starts = sr.resolve(schedule);
+		this.totalTime = 0;
 		this.isRunning = false;
 		this.isFinished = false;
-		this.data = {};
-		this.steps = [];
-		this.totalTime = 0;
+		this.request = null;
 
 		this.on("error", this.handleError);
-		//this.on("starting", this.load);
-		//this.on("loaded", this.setRunningFlag);
-		//this.on("started", this.doProgress);
 		this.on("finish", this.finish);
 	}
 
@@ -39,10 +26,11 @@ class Transaction extends EventEmitter
 	{
 		if (phase === "load" || phase === "step")
 		{
-			log.log({
-				trid: this.trid,
+			schemas.Log.create({
+				transaction: this.trid,
 				action: "transaction error",
 				data: {
+					phase: phase,
 					message: message
 				},
 				duration: profiler.mark()
@@ -51,76 +39,63 @@ class Transaction extends EventEmitter
 		}
 	}
 
-	start()
-	{
-		this.isRunning = true;
-		this.isFinished = false;
-		log.log({
-			trid: this.trid,
-			action: "transaction starting"
-		}, (err, results, fields) => {
-			if (err)
-			{
-				this.emit("error", "start", "Log before load: MySQL log error: " + (err.sqlMessage || err.message));
-				return;
-			}
-
-			this.emit("starting");
-			this.load();
-		});
-	}
-
 	finish()
 	{
 		this.isRunning = false;
 		this.isFinished = true;
 
-		log.log({
-			trid: this.id,
+		schemas.Log.create({
+			transaction: this.trid,
 			action: "transaction finished",
 			duration: this.totalTime
-		}, (err, results, fields) => {
-			if (err)
-			{
-				this.emit("error", "finish", "Log on finish: MySQL log error: " + (err.sqlMessage || err.message));
-				return;
-			}
+		});
 
-			var q = "UPDATE ?? SET `isRunning` = 0, `isFinished` = ?, `completedSteps` = ? WHERE `id` = ?";
-			db.connection.query(q, [config.dbt.TRANSACTIONS, this.data.isRecurring ? 0 : 1, this.data.completedSteps, this.trid], (err, results, fields) => {
+		if (this.entity)
+		{
+			this.entity.updateOne({ isRunning: 0, isFinished: !this.entity.isRecurring, completedSteps: this.entity.completedSteps }, (err, r) => {
 				if (err)
 				{
-					this.emit("error", "finish", "Log on finish: MySQL transaction error: " + (err.sqlMessage || err.message));
+					this.emit("error", "load", err.message);
 					return;
 				}
 
 				this.emit("complete");
 			});
+		}
+	}
+
+	start()
+	{
+		this.isRunning = true;
+		this.isFinished = false;
+		profiler.start();
+
+		schemas.Log.create({
+			trid: this.trid,
+			action: "transaction starting"
 		});
+
+		this.emit("starting");
+		this.load();
 	}
 
 	load()
 	{
-		if (!this.data.trid)
+		if (!this.entity)
 		{
-			var q = "SELECT * FROM ?? WHERE `id` = ?";
-			db.connection.query(q, [config.dbt.TRANSACTIONS, this.trid], (err, results, fields) => {
+			schemas.Transaction.findById(this.trid).populate("steps").exec((err, item) => {
 				if (err)
 				{
-					this.emit("error", "load", "Loading transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
+					this.emit("error", "load", err.message);
 					return;
 				}
 
-				if (results.length !== 1)
+				if (!item)
 				{
-					this.emit("error", "load", "Loading transaction: The following transaction could not be found: " + this.trid);
-					return;
+					this.emit("error", "load", "The following transaction could not be found: " + this.trid)
 				}
 
-				Object.keys(results[0]).map((key, i) => {
-					var item = results[0][key];
-					this.data[key] = item;
-				});
+				this.entity = item;
 				this.loadSteps();
 			});
 		}
@@ -132,44 +107,108 @@ class Transaction extends EventEmitter
 
 	loadSteps()
 	{
-		if (!this.steps || !this.steps.length)
+		if (!this.entity.steps.length)
 		{
-			this.steps = [];
-
-			var q = "SELECT * FROM ?? WHERE `trid` = ? ORDER BY `id` ASC";
-			db.connection.query(q, [config.dbt.STEPS, this.trid], (err, results, fields) => {
-				if (err)
-				{
-					this.emit("error", "load", "Loading transaction steps: MySQL query steps error: " + (err.sqlMessage || err.message));
-					return;
-				}
-
-				this.steps = results.map((item, i) => {
-					var newItem = {};
-					Object.keys(item).map((key, ii) => {
-						newItem[key] = item[key];
-					});
-
-					return new TransactionStep(newItem);
+			if (this.entity.stepsGetterUrl)
+			{
+				schemas.Log.create({
+					transaction: this.trid,
+					action: "transaction getting steps",
+					data: {
+						url: this.entity.stepsGetterUrl
+					}
 				});
 
-				if (!this.steps.length)
-				{
-					if (this.data.stepsGetterUrl)
+				var started = profiler.mark();
+				this.request = new Request(this.entity.stepsGetterUrl, true);
+				this.request.on("error", (err) => {
+					this.emit("error", "step", err.message);
+				});
+				this.request.on("request.error", (request, err) => {
+					schemas.Log.create({
+						transaction: this.trid,
+						action: "transaction getting steps error",
+						data: {
+							message: (err.code ? err.code + ":" : "") + err.message,
+							request: request
+						},
+						duration: profiler.mark()
+					});
+
+					this.emit("error", "load", err.message);
+				});
+				this.request.on("request.complete", (request, response, data) => {
+					schemas.Log.create({
+						transaction: this.trid,
+						action: "transaction getting steps response",
+						data: {
+							request: request,
+							response: {
+								headers: response.headers,
+								body: response.body
+							}
+						},
+						status: response.status,
+						duration: profiler.mark()
+					});
+
+					if (response.status !== 200)
 					{
-						this.loadStepsFromUrl();
+						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
+						return;
 					}
-					else
+
+					if (!data || !(data instanceof Array) || !data.length)
 					{
-						this.emit("error", "load-steps");
+						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
+						return;
 					}
-				}
-				else
-				{
-					this.emit("loaded");
-					this.setRunningFlag();
-				}
-			});
+
+					var steps = data.map((value, key) => {
+						return value.url;
+					});
+					steps = steps.filter((value, key) => {
+						return !!value;
+					});
+
+					if (!steps.length)
+					{
+						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
+						return;
+					}
+
+					steps.map((value, key) => {
+						this.entity.steps.push(new schemas.TransactionStep({
+							transaction: this.entity.id,
+							url: value
+						}));
+					});
+
+					schemas.TransactionStep.insertMany(this.entity.steps, (err, items) => {
+						if (err)
+						{
+							this.emit("error", "load", err.message);
+							return;
+						}
+
+						this.entity.save((err, entity) => {
+							if (err)
+							{
+								this.emit("error", "load", err.message);
+								return;
+							}
+
+							this.emit("loaded");
+							this.setRunningFlag();
+						});
+					});
+				});
+				this.request.execute();
+			}
+			else
+			{
+				this.emit("error", "load-steps", "There are no steps for this transaction and no url to load them either.");
+			}
 		}
 		else
 		{
@@ -178,176 +217,12 @@ class Transaction extends EventEmitter
 		}
 	}
 
-	loadStepsFromUrl()
-	{
-		log.log({
-			trid: this.trid,
-			action: "transaction getting steps",
-			data: {
-				url: this.data.stepsGetterUrl
-			}
-		}, (error, results, fields) => {
-			if (error)
-			{
-				this.emit("error", "log", "Log on loadStepsFromUrl: " + (error.sqlMessage || error.message));
-				return;
-			}
-
-			profiler.start();
-			var url = this.data.stepsGetterUrl.split("//");
-			var connector;
-			if (url[0] === "https:")
-			{
-				connector = https;
-			}
-			else
-			{
-				connector = http;
-			}
-			var request = {};
-			var response = {
-				status: 0,
-				headers: {},
-				body: ""
-			};
-
-			try
-			{
-				url = new URL(this.data.stepsGetterUrl);
-				url.method = "GET";
-				var req = connector.request(url, (res) => {
-					response.status = res.statusCode;
-					response.headers = res.headers;
-					res.on("data", (data) => {
-						response.body += data;
-					});
-					res.on("end", () => {
-						try
-						{
-							var data = JSON.parse(response.body);
-							this.handleStepsRequestFinished(request, response, data);
-						}
-						catch (e)
-						{
-							this.handleStepsRequestError(request, e);
-						}
-					});
-				});
-				req.on("socket", (socket) => {
-					socket.setTimeout(config.api.executionTimeout);
-					socket.on("timeout", () => {
-						req.abort();
-					});
-				});
-				req.on("error", (err) => {
-					this.handleStepsRequestError(request, err);
-				});
-				req.end();
-				request = req.output;
-			}
-			catch (e)
-			{
-				this.emit("error", "load", e.message);
-			}
-		});
-	}
-
-	handleStepsRequestFinished(request, response, data)
-	{
-		log.log({
-			trid: this.trid,
-			stid: this.id,
-			action: "transaction getting steps response",
-			request: request,
-			response: {
-				headers: response.headers,
-				body: response.body
-			},
-			status: response.status,
-			duration: profiler.mark()
-		}, (error, results, fields) => {
-			if (error)
-			{
-				this.emit("error", "log", error);
-				return;
-			}
-
-			if (!data || !(data instanceof Array) || !data.length)
-			{
-				this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
-				return;
-			}
-
-			var steps = data.map((value, key) => {
-				return value.url;
-			});
-			steps = steps.filter((value, key) => {
-				return !!value;
-			});
-			if (!steps.length)
-			{
-				this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
-				return;
-			}
-
-			var q = "UPDATE ?? SET `numSteps` = ? WHERE `id` = ?";
-			db.connection.query(q, [config.dbt.TRANSACTIONS, steps.length, this.trid], (err, results, fields) => {
-				if (err)
-				{
-					this.emit("error", "log", "MySQL query update transaction error: " + (err.sqlMessage || err.message));
-					return;
-				}
-
-				var values = steps.map((value, key) => {
-					return [
-						this.trid,
-						value,
-						new Date()
-					];
-				});
-				q = "INSERT INTO ?? (`trid`, `url`, `created`) VALUES ?";
-				db.connection.query(q, [config.dbt.STEPS, values], (err, results, fields) => {
-					if (err)
-					{
-						q = "DELETE FROM ?? WHERE `trid` = ?";
-						db.query(q, [config.dbt.STEPS, message.trid]);
-						this.emit("error", "log", "MySQL query creating steps for transaction error: " + (err.sqlMessage || err.message));
-					}
-
-					this.loadSteps();
-				});
-			});
-		});
-	}
-
-	handleStepsRequestError(request, err)
-	{
-		log.log({
-			trid: this.trid,
-			action: "transaction getting steps error",
-			data: {
-				message: (err.code ? err.code + ":" : "") + err.message
-			},
-			request: request,
-			duration: profiler.mark()
-		}, (error, results, fields) => {
-			if (error)
-			{
-				this.emit("error", "log", "Log handleStepsRequestError: " + (error.sqlMessage || error.message));
-				return;
-			}
-
-			this.emit("error", "getting-steps", err);
-		});
-	}
-
 	setRunningFlag()
 	{
-		var q = "UPDATE ?? SET `isRunning` = 1 WHERE `id` = ?";
-		db.connection.query(q, [config.dbt.TRANSACTIONS, this.trid], (err, results, fields) => {
+		this.entity.updateOne({ isRunning: true }, (err, r) => {
 			if (err)
 			{
-				this.emit("error", "load", "Starting transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
+				this.emit("error", "load", err.message);
 				return;
 			}
 
@@ -358,172 +233,210 @@ class Transaction extends EventEmitter
 
 	doProgress()
 	{
-		for (var i = 0; i < this.steps.length; i++)
+		for (var i = 0; i < this.entity.steps.length; i++)
 		{
-			var step = this.steps[i];
+			var step = this.entity.steps[i];
 			if (step.result === "none")
 			{
+				this.totalTime += profiler.get(true);
+				profiler.start();
 				this.emit("step.starting", i);
 
-				step.on("error", (err) => {
-					this.emit("error", "step", "During step " + (Math.floor(i + 1) + "/" + this.steps.length) + ": MySQL query step error: " + (err.sqlMessage || err.message));
-					this.emit("step.finished", i, err, null);
-				});
-				step.on("complete", (result) => {
-					this.emit("step.finished", i, null, result);
-					this.totalTime += profiler.get(true);
-					if (result.status !== 200)
+				step.updateOne({ isRunning: true, started: new Date() }, (err, r) => {
+					if (err)
 					{
-						this.emit("finish");
+						this.emit("error", "step", err.message);
 						return;
 					}
-					else
-					{
-						var isThereMore = (i <= this.steps.length - 1);
-						var isLastStep = (i === this.steps.length - 1);
-						if (isThereMore)
+
+					schemas.Log.create({
+						transaction: this.trid,
+						step: step.id,
+						action: "step starting"
+					});
+
+					this.request = new Request(step.url);
+					this.request.on("error", (err) => {
+						this.emit("error", "step", err.message);
+					});
+					this.request.on("request.error", (request, err) => {
+						schemas.Log.create({
+							transaction: this.trid,
+							step: step.id,
+							action: "step error",
+							data: {
+								message: err.code + ":" + err.message,
+								request: request
+							},
+							duration: profiler.mark()
+						});
+
+						step.updateOne({ isRunning: false, duration: profiler.get(true), result: "error" }, (error, r) => {
+							step.result = "error";
+							if (error)
+							{
+								this.emit("error", "step", error.message);
+								return;
+							}
+
+							this.emit("error", "step", "During step " + (Math.floor(i + 1) + "/" + this.entity.steps.length) + ": " + err.message);
+							this.emit("step.finished", i, err, null);
+						});
+					});
+					this.request.on("request.complete", (request, response, data) => {
+						schemas.Log.create({
+							transaction: this.trid,
+							step: step.id,
+							action: "step response arrived",
+							data: {
+								request: request,
+								response: {
+									headers: response.headers,
+									body: response.body
+								}
+							},
+							status: response.status,
+							duration: profiler.mark()
+						});
+
+						if (response.status !== 200)
 						{
-							this.data.completedSteps++;
-							if (this.data.waitAfterStep > 0 && !isLastStep)
-							{
-								setTimeout(() => {
-									this.doProgress();
-								}, this.data.waitAfterStep * 1000);
-							}
-							else
-							{
-								this.doProgress();
-							}
+							step.updateOne({ isRunning: false, duration: profiler.get(true), result: "error" }, (err, r) => {
+								step.result = "success";
+								if (err)
+								{
+									this.emit("error", "step", err.message);
+									return;
+								}
+
+								this.totalTime += profiler.get(true);
+								this.emit("finish");
+							});
 						}
 						else
 						{
-							//this.finish();
-							this.emit("finish");
+							step.updateOne({ isRunning: false, duration: profiler.get(true), result: "success" }, (err, r) => {
+								step.result = "success";
+								if (err)
+								{
+									this.emit("error", "step", err.message);
+									return;
+								}
+
+								this.totalTime += profiler.get(true);
+								var isThereMore = (i <= this.entity.steps.length - 1);
+								var isLastStep = (i === this.entity.steps.length - 1);
+								if (isThereMore)
+								{
+									this.entity.completedSteps++;
+									if (this.entity.waitAfterStep > 0 && !isLastStep)
+									{
+										setTimeout(() => {
+											this.doProgress();
+										}, this.entity.waitAfterStep * 1000);
+									}
+									else
+									{
+										this.doProgress();
+									}
+								}
+								else
+								{
+									this.emit("finish");
+								}
+								return;
+							});
 						}
-						return;
-					}
+						this.emit("step.finished", i, null, response);
+					});
+					this.request.execute();
 				});
-				step.start();
 				break;
 			}
 		}
-		if (i > this.steps.length - 1)
+		if (i > this.entity.steps.length - 1)
 		{
-			//this.finish();
 			this.emit("finish");
 		}
 	}
 
 	scheduleAgain()
 	{
-		if (!this.data || !this.data.id || !this.data.isRecurring)
+		if (!this.entity || !this.entity.id || !this.entity.isRecurring)
 		{
 			return false;
 		}
-		var q = "UPDATE ?? SET `isFinished` = ? WHERE `id` = ?";
-		db.connection.query(q, [config.dbt.TRANSACTIONS, 1, this.trid], (err, results, fields) => {
+
+		this.entity.updateOne({ isFinished: true }, (err, r) => {
 			if (err)
 			{
-				this.emit("error", "schedule-again", "Closing previous transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
+				this.emit("error", "schedule-again", err.message);
 				return;
 			}
 
-			log.log({
-				trid: this.trid,
+			schemas.Log.create({
+				transaction: this.trid,
 				action: "transaction schedule-again"
-			}, (error, results, fields) => {
-				if (error)
-				{
-					this.emit("error", "schedule-again", "Log on shceduleAgain: " + (error.sqlMessage || error.message));
-					return;
-				}
+			});
 
-				if (!this.data.originator)
-				{
-					this.data.originator = this.trid;
-				}
-				this.data.id = null;
-				this.data.isRunning = 0;
-				this.data.isFinished = 0;
-				this.data.isCanceled = 0;
-				this.data.completedSteps = 0;
-				this.data.created = new Date();
-				var q = "INSERT INTO `" + config.dbt.TRANSACTIONS + "` SET ?";
-				db.connection.query(q, this.data, (err, results, fields) => {
+			if (!this.entity.originator)
+			{
+				this.entity.originator = this.trid;
+			}
+			var copy = new schemas.Transaction({
+				originator: this.entity.originator || this.trid,
+				owner: this.entity.owner,
+				name: this.entity.name,
+				schedule: this.entity.schedule,
+				isRecurring: this.entity.isRecurring,
+				stepsGetterUrl: this.entity.stepsGetterUrl,
+				numSteps: 0,
+				completedSteps: 0,
+				waitAfterStep: this.entity.waitAfterStep
+			});
+
+			if (!this.entity.stepsGetterUrl)
+			{
+				this.entity.steps.map((step, key) => {
+					copy.steps.push(new schemas.TransactionStep({
+						transaction: copy.id,
+						url: step.url
+					}));
+				});
+
+				schemas.TransactionStep.insertMany(copy.steps, (err, items) => {
 					if (err)
 					{
-						this.emit("error", "schedule-again", "Copying transaction: MySQL query transaction error: " + (err.sqlMessage || err.message));
+						this.emit("error", "schedule-again", err.message);
 						return;
 					}
 
-					this.data.id = results.insertId;
-					if (this.data.stepsGetterUrl)
-					{
-						this.emit("schedule.complete", this.data.id, this.data.schedule);
-					}
-					else
-					{
-						this.scheduleStep(0);
-					}
+					copy.save((err, copy) => {
+						if (err)
+						{
+							this.emit("error", "schedule-again", err.message);
+							return;
+						}
+
+						this.emit("schedule.complete", copy.id, copy.schedule);
+					});
 				});
-			});
-		});
-	}
-
-	scheduleStep(index)
-	{
-		if (!this.steps[index])
-		{
-			log.log({
-				trid: this.trid,
-				action: "transaction schedule-again complete"
-			}, (error, results, fields) => {
-				if (error)
-				{
-					this.emit("error", "schedule-again", "Log on scheduleStep ended: " + (error.sqlMessage || error.message));
-					return;
-				}
-
-				this.emit("schedule.complete", this.data.id, this.data.schedule);
-			});
-			return;
-		}
-
-		var step = this.steps[index];
-		var newStep = {
-			id: null,
-			trid: this.data.id,
-			url: step.url,
-			isRunning: 0,
-			created: new Date(),
-			started: null,
-			duration: 0,
-			result: "none"
-		};
-		log.log({
-			trid: this.trid,
-			stid: step.id,
-			action: "step schedule-again",
-			data: newStep
-		}, (error, results, fields) => {
-			if (error)
-			{
-				this.emit("error", "schedule-again", "Log on schedule step: " + (error.sqlMessage || error.message));
-				return;
 			}
+			else
+			{
+				copy.save((err, copy) => {
+					if (err)
+					{
+						this.emit("error", "schedule-again", err.message);
+						return;
+					}
 
-			var q = "INSERT INTO `" + config.dbt.STEPS + "` SET ?";
-			db.connection.query(q, newStep, (err, results, fields) => {
-				if (err)
-				{
-					this.emit("error", "schedule-again", "Copying step (" + index + "): MySQL query transaction error: " + (err.sqlMessage || err.message));
-					return;
-				}
-
-				this.scheduleStep(index + 1);
-			});
+					this.emit("schedule.complete", copy.id, copy.schedule);
+				});
+			}
 		});
 	}
+
 }
 
 module.exports = Transaction;

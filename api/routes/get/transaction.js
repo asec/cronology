@@ -1,42 +1,55 @@
-var scheduleResolver = require("../../../utils/scheduleResolver.js");
-const EventEmitter = require("events");
+const EventEmitter = require("events"),
+	sr = require("../../../utils/scheduleResolver.js"),
+	schemas = require("../../../model/index.js");
 
 class ApiFunction extends EventEmitter
 {
 
-	process(req, res, next, db, config)
+	process(req)
 	{
-		var message = {
-			success: true
-		};
-		var limitStart = 0;
-		var limit = 20;
+		var limitStart = parseInt(req.query.start, 10);
+		var limit = parseInt(req.query.limit, 10);
+		if (!limitStart || isNaN(limitStart) || limitStart <= 0)
+		{
+			limitStart = 0;
+		}
+		if (!limit || isNaN(limit) || limit <= 0)
+		{
+			limit = 20;
+		}
 
-		var q = "SELECT * FROM ?? ORDER BY `created` DESC LIMIT ?, ?";
-		db.query(q, [config.dbt.TRANSACTIONS, limitStart, limit], (err, results, fields) => {
+		schemas.Transaction.find().sort({ created: -1 }).skip(limitStart).limit(limit).exec((err, items) => {
 			if (err)
 			{
-				return res.json({
-					success: false,
-					error: "MySQL query transactions error: " + (err.sqlMessage || err.message)
-				});
+				this.emit("error", err);
+				return;
 			}
 
-			message.items = results.map((item, key) => {
+			items = items.map((item, key) => {
 				return {
 					trid: item.id,
+					owner: item.owner,
 					name: item.name,
-					schedule: scheduleResolver.resolve(item.schedule, new Date(item.created)),
-					isRecurring: !!item.isRecurring,
-					isRunning: !!item.isRunning,
-					isCanceled: !!item.isCanceled,
-					completedSteps: item.completedSteps,
+					schedule: item.schedule,
+					starts: sr.resolve(item.schedule, new Date(item.created)),
+					isRecurring: item.isRecurring,
+					isRunning: item.isRunning,
+					isFinished: item.isFinished,
+					isCanceled: item.isCanceled,
+					stepsGetterUrl: item.stepsGetterUrl,
 					numSteps: item.numSteps,
+					completedSteps: item.completedSteps,
 					waitAfterStep: item.waitAfterStep,
-					created: item.created
+					steps: item.steps,
+					created: item.created,
+					updated: item.updated
 				};
 			});
-			return res.json(message);
+
+			this.emit("complete", {
+				success: true,
+				items: items
+			});
 		});
 	}
 

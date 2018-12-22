@@ -1,6 +1,5 @@
 var express = require("express"),
 	bodyParser = require("body-parser"),
-	db = require("../utils/db.js"),
 	config = require("../config/config.js"),
 	apiRoutes = require("./routes/routes.js");
 
@@ -32,22 +31,49 @@ module.exports = {
 		// API: Create a transaction
 		app.put("/transaction", (req, res, next) => {
 			const route = new apiRoutes.put.transaction();
-			route.on("success", (message, schedule) => {
-				scheduler.add(message.trid, schedule);
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
 			});
-			route.process(req, res, next, db.connection, config);
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.on("success", (trid, schedule) => {
+				scheduler.add(trid, schedule);
+			});
+			route.process(req);
 		});
 
 		// API: Get a list of transactions
 		app.get("/transaction", (req, res, next) => {
 			const route = new apiRoutes.get.transaction();
-			route.process(req, res, next, db.connection, config);
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
 		});
 
 		// API: Get a transaction
 		app.get("/transaction/:id", (req, res, next) => {
 			const route = new apiRoutes.get.transactionId();
-			route.process(req, res, next, db.connection, config);
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
 		});
 	}
 

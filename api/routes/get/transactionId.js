@@ -1,76 +1,57 @@
-var scheduleResolver = require("../../../utils/scheduleResolver.js");
-const EventEmitter = require("events");
+const EventEmitter = require("events"),
+	sr = require("../../../utils/scheduleResolver.js"),
+	schemas = require("../../../model/index.js");
 
 class ApiFunction extends EventEmitter
 {
 
-	process(req, res, next, db, config)
+	process(req)
 	{
-		var id = parseInt(req.params.id, 10);
-		if (!id || isNaN(id) || id <= 0)
-		{
-			id = 0;
-		}
-		var message = {
-			success: true
-		};
+		var id = req.params.id;
 
-		var q = "SELECT * FROM ?? WHERE `id` = ?";
-		db.query(q, [config.dbt.TRANSACTIONS, id], (err, results, fields) => {
+		schemas.Transaction.findOne({ _id: id }).populate("steps").exec((err, item) => {
 			if (err)
 			{
-				return res.json({
-					success: false,
-					error: "MySQL query transaction error: " + (err.sqlMessage || err.message)
-				});
+				this.emit("error", err);
+				return;
 			}
 
-			if (results.length !== 1)
-			{
-				return res.json({
-					success: false,
-					error: "The following transaction could not be found: " + id
-				});
-			}
+			var items = [item];
+			items = items.map((item, key) => {
+				return {
+					trid: item.id,
+					owner: item.owner,
+					name: item.name,
+					schedule: item.schedule,
+					starts: sr.resolve(item.schedule, new Date(item.created)),
+					isRecurring: item.isRecurring,
+					isRunning: item.isRunning,
+					isFinished: item.isFinished,
+					isCanceled: item.isCanceled,
+					stepsGetterUrl: item.stepsGetterUrl,
+					numSteps: item.numSteps,
+					completedSteps: item.completedSteps,
+					waitAfterStep: item.waitAfterStep,
+					steps: item.steps.map((step, key2) => {
+						return {
+							stid: step.id,
+							url: step.url,
+							isRunning: step.isRunning,
+							started: step.started,
+							duration: step.duration,
+							result: step.result,
+							created: step.created,
+							updated: step.updated
+						};
+					}),
+					created: item.created,
+					updated: item.updated
+				};
+			});
 
-			var item = results[0];
-			message.item = {
-				trid: item.id,
-				name: item.name,
-				schedule: scheduleResolver.resolve(item.schedule, new Date(item.created)),
-				isRecurring: !!item.isRecurring,
-				isRunning: !!item.isRunning,
-				isCanceled: !!item.isCanceled,
-				completedSteps: item.completedSteps,
-				numSteps: item.numSteps,
-				waitAfterStep: item.waitAfterStep,
-				created: item.created,
-				steps: []
-			};
-
-			q = "SELECT * FROM ?? WHERE `trid` = ? ORDER BY `id` ASC";
-			db.query(q, [config.dbt.STEPS, id], (err, results, fields) => {
-				if (err)
-				{
-					return res.json({
-						success: false,
-						error: "MySQL query transaction steps error: " + (err.sqlMessage || err.message)
-					});
-				}
-
-				message.item.steps = results.map((item, key) => {
-					return {
-						stid: item.id,
-						url: item.url,
-						isRunning: !!item.isRunning,
-						created: item.created,
-						started: item.started || false,
-						duration: item.duration || 0,
-						result: item.result
-					};
-				});
-
-				return res.json(message);
+			this.emit("complete", {
+				success: true,
+				item: items[0]
 			});
 		});
 	}

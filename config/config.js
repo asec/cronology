@@ -15,6 +15,9 @@ module.exports = {
 		password: "",
 		database: "asec_cronology"
 	},
+	mongodb: {
+		uri: "mongodb://localhost:27017/cronology"
+	},
 	// MySQL tables:
 	dbt: {
 		TRANSACTIONS: "transactions",

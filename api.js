@@ -1,7 +1,6 @@
-var api = require("./api/api-core.js"),
-	scheduler = require("./scheduler/scheduler.js");
-
-//console.log(" --- ", sr.resolve("*/16 10 3 */3 */3"));
+const db = require("./utils/db.js"),
+	scheduler = require("./scheduler/scheduler.js"),
+	api = require("./api/api-core.js");
 
 scheduler.init();
 api.init(scheduler);

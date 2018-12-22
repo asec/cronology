@@ -1,36 +1,30 @@
-var mysql = require("mysql"),
-	config = require("../config/config.js");
+const config = require("../config/config.js"),
+	mongoose = require("mongoose");
 
-module.exports = {
+const db = mongoose.connection;
+db.on("connecting", () => {
+	console.log("Connecting to: " + config.mongodb.uri);
+});
 
-	connection: null,
+db.on("connected", () => {
+	console.log("Connected to database");
+});
 
-	dbConnect: function()
+db.once("open", () => {
+	console.log("Connection is now open");
+});
+
+db.on("error", (err) => {
+	console.error(err.message);
+	if (!err.code)
 	{
-		var self = this;
-		console.error("Connecting to database");
-		self.connection = mysql.createConnection(config.mysql);
-		self.connection.connect((err) => {
-			if (err)
-			{
-				console.error("Error while connecting to database:", err.code);
-				setTimeout(() => {
-					self.dbConnect();
-				}, 100);
-			}
-			else
-			{
-				console.error("CONNECTED to database");
-			}
-		});
-		self.connection.on("error", (err) => {
-			if (err.fatal)
-			{
-				setTimeout(() => {
-					self.dbConnect();
-				}, 100);
-			}
-		});
+		mongoose.disconnect();
+		mongoose.connect(config.mongodb.uri);
 	}
+});
 
-};
+mongoose.set("useNewUrlParser", true);
+mongoose.set('useCreateIndex', true);
+mongoose.connect(config.mongodb.uri);
+
+module.exports = db;
