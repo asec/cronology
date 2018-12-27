@@ -6,7 +6,8 @@ module.exports = {
 
 	get: {
 		transaction: require("./get/transaction.js"),
-		transactionId: require("./get/transactionId.js")
+		transactionId: require("./get/transactionId.js"),
+		settings: require("./get/settings.js")
 	},
 
 	post: {

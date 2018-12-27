@@ -4,6 +4,7 @@
   "description": "An API and a scheduler for remotely executing code in a timely manner.",
   "main": "api.js",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.16.4",
     "mongoose": "^5.4.0"
   },

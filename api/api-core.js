@@ -1,4 +1,5 @@
 var express = require("express"),
+	cors = require("cors"),
 	bodyParser = require("body-parser"),
 	config = require("../config/config.js"),
 	apiRoutes = require("./routes/routes.js");
@@ -13,6 +14,7 @@ module.exports = {
 		var self = this;
 		var app = self.app;
 		// Server settings:
+		app.use(cors());
 		app.use(bodyParser.json());
 		app.use(bodyParser.urlencoded({extended: true}));
 
@@ -26,6 +28,21 @@ module.exports = {
 				test: "Valami",
 				success: true
 			})
+		});
+
+		// API: Get settings (important for the first run of the gui)
+		app.get("/settings", (req, res, next) => {
+			const route = new apiRoutes.get.settings();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
 		});
 
 		// API: Create a transaction
