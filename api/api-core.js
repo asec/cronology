@@ -45,6 +45,36 @@ module.exports = {
 			route.process(req);
 		});
 
+		// API: Create an admin user
+		app.put("/admin", (req, res, next) => {
+			const route = new apiRoutes.put.admin();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Logs in a user
+		app.post("/login", (req, res, next) => {
+			const route = new apiRoutes.post.login();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
 		// API: Create a transaction
 		app.put("/transaction", (req, res, next) => {
 			const route = new apiRoutes.put.transaction();
@@ -106,6 +136,66 @@ module.exports = {
 				res.json(message);
 			});
 			route.process(req, scheduler);
+		});
+
+		// API: Get a list of users
+		app.get("/user", (req, res, next) => {
+			const route = new apiRoutes.get.users();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Get the data of a single user by id
+		app.get("/user/:id", (req, res, next) => {
+			const route = new apiRoutes.get.userId();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Register a new normal user
+		app.put("/user", (req, res, next) => {
+			const route = new apiRoutes.put.users();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Delete a user
+		app.delete("/user/:id/delete", (req, res, next) => {
+			const route = new apiRoutes.delete.users();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
 		});
 	}
 

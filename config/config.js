@@ -3,7 +3,8 @@ module.exports = {
 	// API settings:
 	api: {
 		port: 7331,
-		executionTimeout: 600000  // 10 mins
+		executionTimeout: 600000,  // 10 mins
+		userSessionLength: 5 // 5 mins
 	},
 	scheduler: {
 		tickrate: 300
