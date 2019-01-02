@@ -11,7 +11,7 @@ class ApiFunction extends ApiFunctionAuthenticable
 			var data = {
 				username: req.body.username,
 				password: req.body.password,
-				isAdmin: false
+				isAdmin: !!req.body.isAdmin
 			};
 
 			if (!data.username || !data.password)

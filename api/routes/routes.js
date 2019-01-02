@@ -3,7 +3,8 @@ module.exports = {
 	put: {
 		transaction: require("./put/transaction.js"),
 		admin: require("./put/admin.js"),
-		users: require("./put/user.js")
+		users: require("./put/user.js"),
+		usersId: require("./put/userId.js")
 	},
 
 	get: {
