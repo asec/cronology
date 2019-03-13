@@ -15,6 +15,7 @@ class ApiFunction extends EventEmitter
 			numSteps: 0,
 			stepsGetterUrl: req.body.stepsGetterUrl || ""
 		};
+		console.log(data);
 		if (!(data.steps instanceof Array) || !data.steps)
 		{
 			data.steps = [];
