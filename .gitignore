@@ -1,4 +1,4 @@
 .git
 devel
 node_modules
-./node-cronology-aws.pem
+node-cronology-aws.pem
