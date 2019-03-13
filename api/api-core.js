@@ -212,6 +212,81 @@ module.exports = {
 			});
 			route.process(req);
 		});
+
+		// API: Create a project
+		app.put("/project", (req, res, next) => {
+			const route = new apiRoutes.put.project();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Get a list of projects
+		app.get("/project", (req, res, next) => {
+			const route = new apiRoutes.get.project();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Get the data of a single project by id
+		app.get("/project/:id", (req, res, next) => {
+			const route = new apiRoutes.get.projectId();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Edit a project
+		app.put("/project/:id", (req, res, next) => {
+			const route = new apiRoutes.put.projectId();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
+		// API: Delete a project
+		app.delete("/project/:id/delete", (req, res, next) => {
+			const route = new apiRoutes.delete.project();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
 	}
 
 };

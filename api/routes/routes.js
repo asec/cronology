@@ -4,7 +4,9 @@ module.exports = {
 		transaction: require("./put/transaction.js"),
 		admin: require("./put/admin.js"),
 		users: require("./put/user.js"),
-		usersId: require("./put/userId.js")
+		usersId: require("./put/userId.js"),
+		project: require("./put/project.js"),
+		projectId: require("./put/projectId.js")
 	},
 
 	get: {
@@ -12,7 +14,9 @@ module.exports = {
 		transactionId: require("./get/transactionId.js"),
 		settings: require("./get/settings.js"),
 		users: require("./get/users.js"),
-		userId: require("./get/userId.js")
+		userId: require("./get/userId.js"),
+		project: require("./get/project.js"),
+		projectId: require("./get/projectId.js")
 	},
 
 	post: {
@@ -21,7 +25,8 @@ module.exports = {
 	},
 
 	delete: {
-		users: require("./delete/users.js")
+		users: require("./delete/users.js"),
+		project: require("./delete/project.js")
 	}
 
 };
