@@ -21,7 +21,6 @@ class Request extends EventEmitter
 
 	execute()
 	{
-		console.log(this.url);
 		var url = this.url.split("//");
 		var connector;
 		if (url[0] === "https:")
@@ -42,6 +41,7 @@ class Request extends EventEmitter
 		try
 		{
 			url = new URL(this.url);
+			console.log(url);
 			url.method = "GET";
 			this.req = connector.request(url, (res) => {
 				response.status = res.statusCode;
