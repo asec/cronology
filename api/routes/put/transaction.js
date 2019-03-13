@@ -61,7 +61,7 @@ class ApiFunction extends EventEmitter
 			data.isRecurring = true;
 		}
 
-		schemas.User.findOne({ username: "test" }, (err, user) => {
+		schemas.User.findOne({ username: "admin" }, (err, user) => {
 			if (err)
 			{
 				this.emit("error", err);
