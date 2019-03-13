@@ -134,6 +134,7 @@ module.exports = {
 							var currentTime = new Date(now).getTime();
 							var finishTime = currentTime + 1000 * 60 * 60 * 24 * 365 * 5;
 							var resolution = 1000 * 60;
+							currentTime += resolution;
 							while (currentTime < finishTime)
 							{
 								var current = new Date(currentTime);
