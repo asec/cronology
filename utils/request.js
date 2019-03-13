@@ -21,6 +21,7 @@ class Request extends EventEmitter
 
 	execute()
 	{
+		console.log(this.url);
 		var url = this.url.split("//");
 		var connector;
 		if (url[0] === "https:")

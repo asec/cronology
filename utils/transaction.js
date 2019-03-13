@@ -112,7 +112,6 @@ class Transaction extends EventEmitter
 				}
 
 				this.entity = item;
-				console.log(this.entity);
 				this.loadSteps();
 			});
 		}
