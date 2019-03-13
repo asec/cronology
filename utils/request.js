@@ -41,7 +41,6 @@ class Request extends EventEmitter
 		try
 		{
 			url = new URL(this.url);
-			console.log(url);
 			url.method = "GET";
 			this.req = connector.request(url, (res) => {
 				response.status = res.statusCode;
