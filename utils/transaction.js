@@ -180,6 +180,8 @@ class Transaction extends EventEmitter
 						return;
 					}
 
+					console.log(data);
+
 					var steps = data.map((value, key) => {
 						return value.url;
 					});
