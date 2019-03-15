@@ -351,6 +351,9 @@ class Transaction extends EventEmitter
 								if (isThereMore)
 								{
 									this.entity.completedSteps++;
+									this.entity.save((err, copy) => {
+										// TODO: Hibajelzés esetleg
+									});
 									if (this.entity.waitAfterStep > 0 && !isLastStep)
 									{
 										this.timeout = setTimeout(() => {
