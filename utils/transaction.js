@@ -170,13 +170,13 @@ class Transaction extends EventEmitter
 
 					if (response.status !== 200)
 					{
-						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
+						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl #1.");
 						return;
 					}
 
 					if (!data || !(data instanceof Array) || !data.length)
 					{
-						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
+						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl #2.");
 						return;
 					}
 
@@ -189,7 +189,7 @@ class Transaction extends EventEmitter
 
 					if (!steps.length)
 					{
-						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl.");
+						this.emit("error", "load", "Could not get any valid steps from stepsGetterUrl #3.");
 						return;
 					}
 
