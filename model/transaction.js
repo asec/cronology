@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
 	originator: { type: mongoose.Schema.Types.ObjectId, ref: "Transaction", sparse: true },
-	owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+	owner: { type: mongoose.Schema.Types.ObjectId, ref: "Project" },
 	name: { type: String, default: "" },
 	schedule: { type: String, default: "" },
 	isRecurring: { type: Boolean, default: false },

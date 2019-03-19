@@ -13,7 +13,8 @@ class ApiFunction extends EventEmitter
 			waitAfterStep: parseInt(req.body.waitAfterStep, 10),
 			steps: req.body.steps,
 			numSteps: 0,
-			stepsGetterUrl: req.body.stepsGetterUrl || ""
+			stepsGetterUrl: req.body.stepsGetterUrl || "",
+			owner: req.body.owner || ""
 		};
 		if (!(data.steps instanceof Array) || !data.steps)
 		{
@@ -61,17 +62,24 @@ class ApiFunction extends EventEmitter
 			data.isRecurring = true;
 		}
 
-		schemas.User.findOne({ username: "admin" }, (err, user) => {
+		//schemas.User.findOne({ username: "admin" }, (err, user) => {
+		schemas.Project.findOne({ _id: data.owner }, (err, owner) => {
 			if (err)
 			{
 				this.emit("error", err);
 				return;
 			}
 
+			if (!owner)
+			{
+				this.emit("error", new Error("There is no project with that id, so the owner of the transaction couldn't be set."));
+				return;
+			}
+
 			var steps = data.steps;
 			delete data.steps;
 
-			data.owner = user;
+			data.owner = owner;
 			const entity = new schemas.Transaction(data);
 			steps.map((value, key) => {
 				entity.steps.push(new schemas.TransactionStep({

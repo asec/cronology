@@ -9,7 +9,7 @@ class ApiFunction extends EventEmitter
 	{
 		var id = req.params.id;
 
-		schemas.Transaction.findOne({ _id: id }).populate("steps").exec((err, item) => {
+		schemas.Transaction.findOne({ _id: id }).populate(["steps", "owner"]).exec((err, item) => {
 			if (err)
 			{
 				this.emit("error", err);
@@ -27,7 +27,14 @@ class ApiFunction extends EventEmitter
 				return {
 					trid: item.id,
 					originator: item.originator,
-					owner: item.owner,
+					owner: {
+						id: item.owner.id,
+						name: item.owner.name,
+						color: item.owner.color,
+						participants: item.owner.participants,
+						created: item.owner.created,
+						updated: item.owner.updated
+					},
 					name: item.name,
 					schedule: item.schedule,
 					starts: sr.resolve(item.schedule, new Date(item.created)),
