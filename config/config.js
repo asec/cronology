@@ -9,17 +9,10 @@ module.exports = {
 	scheduler: {
 		tickrate: 300
 	},
-	// MySQL settings:
-	mysql: {
-		host: "localhost",
-		user: "root",
-		password: "",
-		database: "asec_cronology"
-	},
 	mongodb: {
 		uri: "mongodb://localhost:27017/cronology"
 	},
-	// MySQL tables:
+	// DB tables:
 	dbt: {
 		TRANSACTIONS: "transactions",
 		STEPS: "transactions_steps",
