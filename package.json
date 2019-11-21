@@ -6,12 +6,12 @@
   "dependencies": {
     "bcrypt": "^3.0.3",
     "cors": "^2.8.5",
-    "express": "^4.16.4",
+    "express": "^4.17.1",
     "gulp": "^4.0.2",
-    "mongoose": "^5.4.0"
+    "mongoose": "^5.7.12"
   },
   "devDependencies": {
-    "nodemon": "^1.18.9"
+    "nodemon": "^1.19.4"
   },
   "scripts": {
     "run": "nodemon api.js"

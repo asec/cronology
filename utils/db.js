@@ -25,6 +25,8 @@ db.on("error", (err) => {
 
 mongoose.set("useNewUrlParser", true);
 mongoose.set('useCreateIndex', true);
-mongoose.connect(config.mongodb.uri);
+mongoose.connect(config.mongodb.uri, {
+	useUnifiedTopology: true
+});
 
 module.exports = db;
