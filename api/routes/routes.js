@@ -12,6 +12,7 @@ module.exports = {
 	get: {
 		transaction: require("./get/transaction.js"),
 		transactionId: require("./get/transactionId.js"),
+		transactionIdList: require("./get/transactionIdList.js"),
 		settings: require("./get/settings.js"),
 		users: require("./get/users.js"),
 		userId: require("./get/userId.js"),

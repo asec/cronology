@@ -123,6 +123,21 @@ module.exports = {
 			route.process(req);
 		});
 
+		// API: Get all previous runs for a transaction
+		app.get("/transaction/:id/list", (req, res, next) => {
+			const route = new apiRoutes.get.transactionIdList();
+			route.on("error", (err) => {
+				res.json({
+					success: false,
+					error: err.message
+				});
+			});
+			route.on("complete", (message) => {
+				res.json(message);
+			});
+			route.process(req);
+		});
+
 		// API: Cancel a transaction
 		app.post("/transaction/:id/cancel", (req, res, next) => {
 			const route = new apiRoutes.post.transactionIdCancel();

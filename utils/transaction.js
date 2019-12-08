@@ -207,6 +207,8 @@ class Transaction extends EventEmitter
 							return;
 						}
 
+						this.entity.numSteps = this.entity.steps.length;
+
 						this.entity.save((err, entity) => {
 							if (err)
 							{
@@ -466,12 +468,39 @@ class Transaction extends EventEmitter
 	{
 		clearTimeout(this.timeout);
 		this.timeout = null;
-		this.entity.isCanceled = true;
-		if (this.request)
+		if (!this.entity)
 		{
-			this.request.abort();
+			schemas.Transaction.findById(this.trid).populate("steps").exec((err, item) => {
+				if (err)
+				{
+					this.emit("error", "load", err.message);
+					return;
+				}
+
+				if (!item)
+				{
+					this.emit("error", "load", "The following transaction could not be found: " + this.trid)
+				}
+
+				this.entity = item;
+				this.entity.isCanceled = true;
+
+				if (this.request)
+				{
+					this.request.abort();
+				}
+				this.emit("canceled", new Date());
+			});
 		}
-		this.emit("canceled", new Date());
+		else
+		{
+			if (this.request)
+			{
+				this.request.abort();
+			}
+			this.entity.isCanceled = true;
+			this.emit("canceled", new Date());
+		}
 	}
 
 }
