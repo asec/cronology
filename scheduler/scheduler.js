@@ -3,7 +3,7 @@ const EventEmitter = require("events"),
 	schemas = require("../model/index.js"),
 	Transaction = require("../utils/transaction.js");
 
-class Scheduler  extends EventEmitter
+class Scheduler extends EventEmitter
 {
 	constructor()
 	{
