@@ -1,5 +1,6 @@
 var express = require("express"),
 	httpWrapper = require('https'),
+	fs = require('fs'),
 	cors = require("cors"),
 	bodyParser = require("body-parser"),
 	config = require("../config/config.js"),
