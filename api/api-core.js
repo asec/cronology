@@ -1,4 +1,5 @@
 var express = require("express"),
+	httpWrapper = require('https'),
 	cors = require("cors"),
 	bodyParser = require("body-parser"),
 	config = require("../config/config.js"),
@@ -13,12 +14,17 @@ module.exports = {
 	{
 		var self = this;
 		var app = self.app;
+		const credentials = {
+			key: fs.readFileSync('/etc/letsencrypt/live/api.just-asec.com/privkey.pem', 'utf8'),
+			cert: fs.readFileSync('/etc/letsencrypt/live/api.just-asec.com/fullchain.pem', 'utf8')
+		};
+		const http = httpWrapper.createServer(credentials, app);
 		// Server settings:
 		app.use(cors());
 		app.use(bodyParser.json());
 		app.use(bodyParser.urlencoded({extended: true}));
 
-		app.listen(config.api.port, () => {
+		http.listen(config.api.port, () => {
 			console.log("Server started on " + config.api.port);
 		});
 
