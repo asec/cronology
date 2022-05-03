@@ -1,6 +1,6 @@
 const EventEmitter = require("events"),
 	schemas = require("../../../model/index.js"),
-	bcrypt = require("bcrypt");
+	bcrypt = require("bcryptjs");
 
 class ApiFunction extends EventEmitter
 {

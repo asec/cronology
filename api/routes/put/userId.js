@@ -1,6 +1,6 @@
 const ApiFunctionAuthenticable = require("../authenticable.js"),
 	schemas = require("../../../model/index.js"),
-	bcrypt = require("bcrypt");
+	bcrypt = require("bcryptjs");
 
 class ApiFunction extends ApiFunctionAuthenticable
 {

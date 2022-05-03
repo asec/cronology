@@ -42,7 +42,7 @@ class Request extends EventEmitter
 		{
 			url = new URL(this.url);
 			url.method = "GET";
-			this.req = connector.request(url, (res) => {
+			this.req = connector.request(url, { timeout: config.api.executionTimeout }, (res) => {
 				response.status = res.statusCode;
 				response.headers = res.headers;
 				res.on("data", (data) => {
