@@ -8,11 +8,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.17.1",
-    "gulp": "^4.0.2",
     "mongoose": "^5.9.21"
   },
   "devDependencies": {
-    "nodemon": "^1.19.4"
+    "nodemon": "^3.0.1"
   },
   "scripts": {
     "start": "nodemon api.js"
