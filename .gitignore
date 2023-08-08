@@ -2,3 +2,6 @@
 devel
 node_modules
 *.pem
+*.local.js
+.idea
+.env.local

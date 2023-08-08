@@ -1,6 +1,5 @@
 const EventEmitter = require("events"),
 	schemas = require("../../../model/index.js"),
-	config = require("../../../config/config.js"),
 	bcrypt = require("bcryptjs");
 
 class ApiFunction extends EventEmitter
@@ -53,7 +52,7 @@ class ApiFunction extends EventEmitter
 				const now = new Date();
 				if (user.accessTokenValid && user.accessTokenValid >= now)
 				{
-					user.accessTokenValid = new Date(now.getTime() + config.api.userSessionLength * 60 * 1000);
+					user.accessTokenValid = new Date(now.getTime() + process.env.CONF_API_USERSESSION_LENGTH * 60 * 1000);
 					user.loginDate = now; // That's debatable, need to think about it still...
 					user.save((err, r) => {
 						if (err)
@@ -88,7 +87,7 @@ class ApiFunction extends EventEmitter
 						}
 
 						user.accessToken = accessToken;
-						user.accessTokenValid = new Date(now.getTime() + config.api.userSessionLength * 60 * 1000);
+						user.accessTokenValid = new Date(now.getTime() + process.env.CONF_API_USERSESSION_LENGTH * 60 * 1000);
 						user.loginDate = now;
 						user.save((err, r) => {
 							if (err)

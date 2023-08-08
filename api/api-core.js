@@ -1,9 +1,8 @@
-var express = require("express"),
+const express = require("express"),
 	httpWrapper = require('https'),
 	fs = require('fs'),
 	cors = require("cors"),
 	bodyParser = require("body-parser"),
-	config = require("../config/config.js"),
 	apiRoutes = require("./routes/routes.js");
 
 module.exports = {
@@ -11,13 +10,12 @@ module.exports = {
 	app: express(),
 	scheduler: null,
 
-	init: function(scheduler)
+	createServer: function()
 	{
-		var self = this;
-		var app = self.app;
+		const app = this.app;
 		const credentials = {
-			key: fs.readFileSync('/etc/letsencrypt/live/api.just-asec.com/privkey.pem', 'utf8'),
-			cert: fs.readFileSync('/etc/letsencrypt/live/api.just-asec.com/fullchain.pem', 'utf8')
+			key: fs.readFileSync(process.env.CONF_API_HTTPS_PRIVATEKEY, 'utf8'),
+			cert: fs.readFileSync(process.env.CONF_API_HTTPS_CERTIFICATE, 'utf8')
 		};
 		const http = httpWrapper.createServer(credentials, app);
 		// Server settings:
@@ -25,8 +23,15 @@ module.exports = {
 		app.use(bodyParser.json());
 		app.use(bodyParser.urlencoded({extended: true}));
 
-		http.listen(config.api.port, () => {
-			console.log("Server started on " + config.api.port);
+		return http;
+	},
+
+	init: function(scheduler)
+	{
+		const http = this.createServer();
+
+		http.listen(process.env.CONF_API_PORT, () => {
+			console.log("Server started on " + process.env.CONF_API_PORT);
 		});
 
 		// TODO: Link or redirect to the github page

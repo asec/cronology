@@ -1,9 +1,8 @@
-const config = require("../config/config.js"),
-	mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
 const db = mongoose.connection;
 db.on("connecting", () => {
-	console.log("Connecting to: " + config.mongodb.uri);
+	console.log("Connecting to: " + process.env.CONF_DB_URI);
 });
 
 db.on("connected", () => {
@@ -19,13 +18,13 @@ db.on("error", (err) => {
 	if (!err.code)
 	{
 		mongoose.disconnect();
-		mongoose.connect(config.mongodb.uri);
+		mongoose.connect(process.env.CONF_DB_URI);
 	}
 });
 
 mongoose.set("useNewUrlParser", true);
 mongoose.set('useCreateIndex', true);
-mongoose.connect(config.mongodb.uri, {
+mongoose.connect(process.env.CONF_DB_URI, {
 	useUnifiedTopology: true
 });
 

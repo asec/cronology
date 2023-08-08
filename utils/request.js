@@ -1,5 +1,4 @@
 const EventEmitter = require("events"),
-	config = require("../config/config.js"),
 	https = require("https"),
 	http = require("http");
 
@@ -42,7 +41,7 @@ class Request extends EventEmitter
 		{
 			url = new URL(this.url);
 			url.method = "GET";
-			this.req = connector.request(url, { timeout: config.api.executionTimeout }, (res) => {
+			this.req = connector.request(url, { timeout: process.env.CONF_API_EXECUTION_TIMEOUT }, (res) => {
 				response.status = res.statusCode;
 				response.headers = res.headers;
 				res.on("data", (data) => {
@@ -69,7 +68,7 @@ class Request extends EventEmitter
 				});
 			});
 			this.req.on("socket", (socket) => {
-				socket.setTimeout(config.api.executionTimeout);
+				socket.setTimeout(process.env.CONF_API_EXECUTION_TIMEOUT);
 				socket.on("timeout", () => {
 					this.req.abort();
 				});

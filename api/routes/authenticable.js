@@ -1,5 +1,4 @@
 const EventEmitter = require("events"),
-	config = require("../../config/config.js"),
 	schemas = require("../../model/index.js");
 
 class ApiFunctionAuthenticable extends EventEmitter
@@ -41,7 +40,7 @@ class ApiFunctionAuthenticable extends EventEmitter
 				return;
 			}
 
-			user.accessTokenValid = new Date(now.getTime() + config.api.userSessionLength * 60 * 1000);
+			user.accessTokenValid = new Date(now.getTime() + process.env.CONF_API_USERSESSION_LENGTH * 60 * 1000);
 			user.save((err, r) => {
 				if (err)
 				{

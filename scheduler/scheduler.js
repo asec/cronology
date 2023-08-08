@@ -1,5 +1,4 @@
 const EventEmitter = require("events"),
-	config = require("../config/config.js"),
 	schemas = require("../model/index.js"),
 	Transaction = require("../utils/transaction.js");
 
@@ -34,7 +33,7 @@ class Scheduler extends EventEmitter
 		// Starting heartbeat:
 		this.interval = setInterval(() => {
 			this.tick();
-		}, config.scheduler.tickrate);
+		}, process.env.CONF_SCHEDULER_TICKRATE);
 	}
 
 	add(trid, schedule)
