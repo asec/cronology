@@ -29,6 +29,7 @@ module.exports = {
 	init: function(scheduler)
 	{
 		const http = this.createServer();
+		const app = this.app;
 
 		http.listen(process.env.CONF_API_PORT, () => {
 			console.log("Server started on " + process.env.CONF_API_PORT);

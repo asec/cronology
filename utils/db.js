@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 
+const mongoUri = process.env.CONF_DB_URI;
 const db = mongoose.connection;
 db.on("connecting", () => {
-	console.log("Connecting to: " + process.env.CONF_DB_URI);
+	console.log("Connecting to: " + mongoUri);
 });
 
 db.on("connected", () => {
@@ -13,19 +14,20 @@ db.once("open", () => {
 	console.log("Connection is now open");
 });
 
-db.on("error", (err) => {
+db.on("error", async (err) => {
 	console.error(err.message);
 	if (!err.code)
 	{
-		mongoose.disconnect();
-		mongoose.connect(process.env.CONF_DB_URI);
+		await mongoose.disconnect();
+		await mongoose.connect(mongoUri);
 	}
 });
 
-mongoose.set("useNewUrlParser", true);
-mongoose.set('useCreateIndex', true);
-mongoose.connect(process.env.CONF_DB_URI, {
-	useUnifiedTopology: true
-});
+module.exports = (async () => {
+	await mongoose.connect(mongoUri, {
+		useUnifiedTopology: true,
+		useNewUrlParser: true
+	});
 
-module.exports = db;
+	return db;
+})();

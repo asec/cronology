@@ -8,13 +8,15 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.17.1",
-    "mongoose": "^5.9.21"
+    "mongoose": "^7.4.2"
   },
   "devDependencies": {
+    "jest": "^29.6.2",
     "nodemon": "^3.0.1"
   },
   "scripts": {
-    "start": "nodemon api.js"
+    "start": "nodemon api.js",
+    "test": "jest"
   },
   "author": "Roland Zsámboki",
   "license": "ISC"
