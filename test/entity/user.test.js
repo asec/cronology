@@ -2,7 +2,6 @@
 require("../../config/dotenv").environment("test");
 const { beforeAll, afterAll, test, afterEach, expect} = require("@jest/globals");
 const { User} = require("../../model");
-const {raw} = require("express");
 const mongoose = require("mongoose");
 
 let db;
@@ -40,7 +39,7 @@ test("Random password generator", async () => {
 });
 
 test("Passwords", async () => {
-    expect.assertions(25);
+    expect.assertions(26);
 
     let rawUserData = {
         username: "admin",
@@ -79,6 +78,9 @@ test("Passwords", async () => {
             await expect(user.validate()).resolves.not.toThrow();
         }
     }
+
+    user = new User({ username: "no-password" });
+    expect(() => user.checkPassword("teszt")).toThrow();
 });
 
 test("Create (OK)", async () => {

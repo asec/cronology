@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const mongoUri = process.env.CONF_DB_URI;
 const db = mongoose.connection;
+
+if (!mongoUri)
+{
+	throw new Error("Missing configuration: CONF_DB_URI");
+}
+
 db.on("connecting", () => {
 	console.log("Connecting to: " + mongoUri);
 });

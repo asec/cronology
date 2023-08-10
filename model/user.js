@@ -9,6 +9,10 @@ let cryptoSaltLength = process.env.APP_ENV === "test" ? 1 : 13;
 function validatePassword()
 {
 	let value = this.plainPassword;
+	if (typeof value === "undefined")
+	{
+		return true;
+	}
 	if (typeof value !== "string")
 	{
 		return false;
@@ -104,6 +108,10 @@ const userSchema = new mongoose.Schema({
 	methods: {
 		checkPassword: function (rawPassword)
 		{
+			if (!this.password)
+			{
+				throw new Error("This user has no password, so it cannot be compared agains the argument.");
+			}
 			return bcrypt.compareSync(rawPassword, this.password);
 		}
 	},
@@ -117,6 +125,11 @@ const userSchema = new mongoose.Schema({
 userSchema.path("password").set(function (value){
 	this.plainPassword = value;
 	return userSchema.statics.hashPassword(value);
+});
+
+userSchema.post("save", function (res, next) {
+	this.plainPassword = undefined;
+	next();
 });
 
 userSchema.index({

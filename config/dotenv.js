@@ -7,6 +7,7 @@ function environment(env = "dev")
     {
         case "test":
             extendConfiguration([".env.test", ".env.test.local"]);
+            process.env.CONF_DB_URI += "_" + String(Math.round(Math.random() * 10000));
             break;
         default:
             extendConfiguration(".env.local");
