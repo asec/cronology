@@ -1,7 +1,7 @@
 "use strict";
 require("../../config/dotenv").environment("test");
 const { beforeAll, afterAll, test, afterEach, expect} = require("@jest/globals");
-const { User} = require("../../model");
+const {User} = require("../../model");
 const mongoose = require("mongoose");
 
 let db;

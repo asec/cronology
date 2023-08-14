@@ -30,7 +30,7 @@ const checkParticipants = async function (project, expectedLength)
     });
 
     await project.populate("participants");
-    console.log(project);
+
     expect(project.participants).toHaveLength(expectedLength);
     project.participants.forEach(userId => {
         expect(userId).toBeInstanceOf(User);
