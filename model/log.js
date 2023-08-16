@@ -102,13 +102,15 @@ const logSchema = new mongoose.Schema({
 				return true;
 			}
 
-			const files = fs.readdirSync(logDir);
+			let files = fs.readdirSync(logDir);
 
 			let index = files.indexOf(logFile);
 			if (index > -1)
 			{
 				fs.rmSync(logDir + "/" + logFile);
-				delete files[index];
+				files = files.filter(item => {
+					return item !== logFile;
+				});
 			}
 
 			if (!files.length)
