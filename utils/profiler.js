@@ -1,15 +1,25 @@
-module.exports = {
+class Profiler
+{
+	sequences = [];
 
-	sequences: [],
-
-	start: function()
+	start()
 	{
-		var now = (new Date()).getTime();
-		this.sequences = [];
+		const now = (new Date()).getTime();
+		this.reset();
 		this.sequences.push(now);
-	},
+	}
 
-	mark: function()
+	reset()
+	{
+		this.sequences = [];
+	}
+
+	now()
+	{
+		return (new Date()).getTime();
+	}
+
+	mark()
 	{
 		if (!this.sequences.length)
 		{
@@ -17,28 +27,37 @@ module.exports = {
 			return -1;
 		}
 
-		var now = (new Date()).getTime();
-		var prev = this.sequences[this.sequences.length - 1];
-		var timeDiff = now - prev;
-		this.sequences.push(now);
+		const timeDiff = this.#getTimeSince();
+
+		this.sequences.push(this.now());
 
 		return timeDiff;
-	},
+	}
 
-	get: function(total)
+	#getTimeSince(first = false)
 	{
-		total = !!total;
+		const now = this.now();
+		const prev = this.sequences[first ? 0 : this.sequences.length - 1];
 
+		return now - prev;
+	}
+
+	get(total = false)
+	{
 		if (!this.sequences.length)
 		{
 			return -1;
 		}
 
-		var now = (new Date()).getTime();
-		var prev = this.sequences[total ? 0 : (this.sequences.length - 1)];
-		var timeDiff = now - prev;
-
-		return timeDiff;
+		return this.#getTimeSince(total);
 	}
 
-};
+	async wait(ms = 200)
+	{
+		await new Promise(resolve => setTimeout(resolve, ms));
+
+		return true;
+	}
+}
+
+module.exports = new Profiler();
