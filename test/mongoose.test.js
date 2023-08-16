@@ -2,16 +2,15 @@
 require("../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 
-let db;
-
-beforeAll(async () => {
-    db = await require("../utils/db");
-});
-
-afterAll(async () => {
-    await db.close();
-});
+const db = require("./db");
 
 test("Connection", async () => {
-    expect(db.readyState).toBe(1);
+
+    await db.connect();
+
+    expect(db.getReadyState()).toBe(1);
+
+    await db.tearDown();
+
+    expect(db.getReadyState()).toBe(0);
 });

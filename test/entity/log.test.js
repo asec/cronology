@@ -4,25 +4,20 @@ const { test, expect, afterEach, afterAll } = require("@jest/globals");
 const {Log} = require("../../model");
 const path = require("path");
 const fs = require("fs");
-const mongoose = require("mongoose");
+const db = require("../db");
 
 const logPath = path.resolve(process.env.CONF_LOG_DIR || "./test/logs/");
-let db;
 
 afterEach(() => {
-    fs.rmSync(logPath, {
-        recursive: true,
-        force: true
-    });
+    Log.tearDown();
 });
 
 afterAll(async () => {
-    if (db.readyState !== 1)
+    if (db.getReadyState() !== 1)
     {
-        await db.openUri(process.env.CONF_DB_URI);
+        await db.connect();
     }
-    await db.dropDatabase();
-    await db.close();
+    await db.tearDown();
 });
 
 function getLineCount(file)
@@ -59,8 +54,8 @@ test("log", async () => {
     await Log.log("error", "Second one");
     expect(await getLineCount(logPath + "/" + logFileName)).toBe(2);
 
-    db = await require("../../utils/db");
-    expect(db.readyState).toBe(1);
+    await db.connect();
+    expect(db.getReadyState()).toBe(1);
 
     let log = await Log.log("warning", "Harmadik", {aaa: "b \n bb", ccc: 12, d: {a:"b",c:"d"}});
 
@@ -68,11 +63,11 @@ test("log", async () => {
     expect(await Log.countDocuments()).toBe(3);
     expect(typeof log.__v).not.toBeUndefined();
 
-    Log.log("success", "Valami teszt", log);
+    await Log.log("success", "Valami teszt", log);
     expect(await getLineCount(logPath + "/" + logFileName)).toBe(3);
     expect(await Log.countDocuments()).toBe(4);
 
-    await db.close();
-    Log.log("success", "Valami\n teszt 2", log);
+    await db.disconnect();
+    await Log.log("success", "Valami\n teszt 2", log);
     expect(await getLineCount(logPath + "/" + logFileName)).toBe(4);
 });

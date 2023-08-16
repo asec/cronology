@@ -4,15 +4,14 @@ const repository = require("./user.repository");
 const {beforeAll, afterAll, test, expect, afterEach} = require("@jest/globals");
 const {User, Project} = require("../../model");
 
-let db;
+const db = require("../db");
 
 beforeAll(async () => {
-    db = await require("../../utils/db");
+    await db.connect();
 });
 
 afterAll(async () => {
-    await db.dropDatabase();
-    await db.close();
+    await db.tearDown();
 });
 
 afterEach(async () => {

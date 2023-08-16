@@ -6,16 +6,15 @@ const mongoose = require("mongoose");
 const users = require("./user.repository");
 const projects = require("./project.repository");
 
-let db;
+const db = require("../db");
 
 beforeAll(async () => {
-    db = await require("../../utils/db");
+    await db.connect();
     await users.createAll();
 });
 
 afterAll(async () => {
-    await db.dropDatabase();
-    await db.close();
+    await db.tearDown();
 });
 
 afterEach(async () => {

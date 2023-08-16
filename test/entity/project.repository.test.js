@@ -6,15 +6,14 @@ const {Project, User} = require("../../model");
 const mongoose = require("mongoose");
 require("../../config/dotenv").environment("test");
 
-let db;
+const db = require("../db");
 
 beforeAll(async () => {
-    db = await require("../../utils/db");
+    await db.connect();
 });
 
 afterAll(async () => {
-    await db.dropDatabase();
-    await db.close();
+    await db.tearDown();
 });
 
 afterEach(async () => {

@@ -30,12 +30,18 @@ const logSchema = new mongoose.Schema({
 			const defaultLogFile = (new Date()).toISOString().split("T")[0];
 			return (typeof this.logFile === "string" && this.logFile) ? this.logFile : defaultLogFile;
 		},
+
 		setLogFile: function (fileName)
 		{
 			this.logFile = fileName;
 		},
+
 		log: async function(type, label, data = {})
 		{
+			if (process.env.CONF_LOG_DISABLED === "true")
+			{
+				return false;
+			}
 			let entity = new logModel({
 				type,
 				label,
@@ -44,6 +50,7 @@ const logSchema = new mongoose.Schema({
 
 			if (mongoose.connection.readyState !== 1)
 			{
+				await entity.validate();
 				const now = new Date();
 				const logDir = path.resolve(process.env.CONF_LOG_DIR || "./");
 				const fileName = this.getLogFile();
@@ -61,7 +68,7 @@ const logSchema = new mongoose.Schema({
 				await entity.save();
 			}
 
-			if (process.env.APP_ENV === "test")
+			if (process.env.APP_ENV === "test" && process.env.CONF_LOG_SILENT !== "true")
 			{
 				const message = entity.data.message ? entity.data.message : entity.data;
 				switch (entity.type)
@@ -78,6 +85,41 @@ const logSchema = new mongoose.Schema({
 			}
 
 			return entity;
+		},
+
+		tearDown: function ()
+		{
+			if (process.env.APP_ENV !== "test")
+			{
+				throw new Error("This function is only available on the test environment!");
+			}
+
+			const logDir = path.resolve(process.env.CONF_LOG_DIR || "./");
+			const logFile = this.getLogFile();
+
+			if (!fs.existsSync(logDir))
+			{
+				return true;
+			}
+
+			const files = fs.readdirSync(logDir);
+
+			let index = files.indexOf(logFile);
+			if (index > -1)
+			{
+				fs.rmSync(logDir + "/" + logFile);
+				delete files[index];
+			}
+
+			if (!files.length)
+			{
+				fs.rmSync(logDir, {
+					recursive: true,
+					force: true
+				});
+			}
+
+			return true;
 		}
 	}
 });
