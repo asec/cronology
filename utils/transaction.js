@@ -1,6 +1,6 @@
 const EventEmitter = require("events"),
 	schemas = require("../model/index.js"),
-	sr = require("./scheduleResolver.js"),
+	sr = require("./scheduleResolver/scheduleResolver.js"),
 	profiler = require("./profiler.js"),
 	Request = require("./request.js");
 

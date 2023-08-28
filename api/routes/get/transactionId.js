@@ -1,5 +1,5 @@
 const EventEmitter = require("events"),
-	sr = require("../../../utils/scheduleResolver.js"),
+	sr = require("../../../utils/scheduleResolver/scheduleResolver.js"),
 	schemas = require("../../../model/index.js");
 
 class ApiFunction extends EventEmitter
