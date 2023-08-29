@@ -36,10 +36,17 @@ class SyntaxValidator
         let parts = [];
         for (let i in this.parts)
         {
-            parts.push(this.parts[i].raw);
+            if (this.parts[i].raw)
+            {
+                parts.push(this.parts[i].raw);
+            }
+            else
+            {
+                parts.push("{X}");
+            }
         }
 
-        return parts.join(" ");
+        return parts.join(" ").trim();
     }
 
     /**
@@ -92,7 +99,7 @@ class SyntaxValidator
             let partData = this.#getPartDataForMatchExact(key, part);
             if (partData !== false)
             {
-                this.parts[key].update(partData);
+                this.parts[key].update({...partData});
                 continue;
             }
 

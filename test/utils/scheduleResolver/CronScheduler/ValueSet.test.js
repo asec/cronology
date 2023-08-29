@@ -128,6 +128,10 @@ test("filterStep", () => {
     valueSet.generate(range[0], range[1]);
     valueSet.filterStep(25);
     expect(valueSet.values).toStrictEqual([]);
+
+    valueSet.generate();
+    valueSet.filterStep(10);
+    expect(valueSet.values).toStrictEqual([]);
 });
 
 test("current", () => {
@@ -248,6 +252,7 @@ test("searchNext", () => {
 test("on: overflow", () => {
     let range = [1, 10];
     let valueSet = new ValueSet(range[0], range[1]);
+    let returned;
 
     class OverflowError1 extends Error {
     }
@@ -255,16 +260,18 @@ test("on: overflow", () => {
     class OverflowError2 extends Error {
     }
 
-    valueSet.on("overflow", () => {
+    returned = valueSet.on("overflow", () => {
         throw new OverflowError1();
     });
+    expect(returned).toBe(true);
     expect(() => valueSet.searchNext(11)).toThrow(OverflowError1);
     expect(() => valueSet.next()).toThrow();
     expect(() => valueSet.current()).toThrow();
 
-    valueSet.on("overflow", () => {
+    returned = valueSet.on("overflow", () => {
         throw new OverflowError2();
     });
+    expect(returned).toBe(false);
     expect(() => valueSet.searchNext(11)).toThrow(OverflowError1);
     expect(() => valueSet.next()).toThrow();
     expect(() => valueSet.current()).toThrow();
@@ -327,11 +334,16 @@ test("on: overflow", () => {
     {
         expect(() => valueSet.next()).toThrow(OverflowError1);
     }
+
+    valueSet = new ValueSet(0, 10);
+    returned = valueSet.on("invalid", () => console.log("invalid"));
+    expect(returned).toBeNull();
 });
 
 test("on: underflow", () => {
     let range = [0, 10];
     let valueSet = new ValueSet(range[0], range[1]);
+    let returned;
 
     class OverflowError extends Error{
     }
@@ -342,12 +354,14 @@ test("on: underflow", () => {
     class UnderflowError2 extends Error {
     }
 
-    valueSet.on("overflow", () => {
+    returned = valueSet.on("overflow", () => {
         throw new OverflowError();
     });
-    valueSet.on("underflow", () => {
+    expect(returned).toBe(true);
+    returned = valueSet.on("underflow", () => {
         throw new UnderflowError1();
     });
+    expect(returned).toBe(true);
     expect(() => valueSet.searchNext(11)).toThrow(OverflowError);
     expect(() => valueSet.prev()).toThrow();
     expect(() => valueSet.current()).toThrow();
@@ -355,9 +369,10 @@ test("on: underflow", () => {
     valueSet.first();
     expect(() => valueSet.prev()).toThrow(UnderflowError1);
 
-    valueSet.on("underflow", () => {
+    returned = valueSet.on("underflow", () => {
         throw new UnderflowError2();
     });
+    expect(returned).toBe(false);
     valueSet.first();
     expect(() => valueSet.prev()).toThrow(UnderflowError1);
 
@@ -688,4 +703,14 @@ test("filter params", () => {
     expect(valueSet.values).toStrictEqual([2, 3, 4, 5, 6]);
 
     expect(valueSet.getFilterParam(0, "test")).toBe(false);
+    expect(valueSet.getFilterParam(0, "max")).toBeUndefined();
+});
+
+test(".values error while not in test environment", () => {
+    let valueSet = new ValueSet(0, 10);
+    let currentEnv = process.env.APP_ENV;
+    process.env.APP_ENV = "dev";
+    expect(() => valueSet.values).toThrow();
+
+    process.env.APP_ENV = currentEnv;
 });

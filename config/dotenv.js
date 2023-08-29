@@ -2,6 +2,9 @@
 // Loading the basic configuration
 require("dotenv").config();
 
+/**
+ * @param {'dev', 'test'} [env = "dev"]
+ */
 function environment(env = "dev")
 {
     switch (env)

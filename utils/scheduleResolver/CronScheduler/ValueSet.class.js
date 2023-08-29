@@ -1,7 +1,15 @@
 "use strict";
+
+/**
+ * @typedef {Object} FilterParams
+ * @property {'exact', 'step'} type
+ * @property {number} [offset]
+ * @property {boolean} unrestricted
+ * @property {...*} [anything-else]
+ */
+
 class ValueSet
 {
-
     #current = -1;
     /**
      * @type {number[]}
@@ -28,11 +36,11 @@ class ValueSet
      */
     #onUnderflow = null;
     /**
-     * @type {(function(params: {}, value: number): boolean)[]}
+     * @type {(function(params: FilterParams, value: number): boolean)[]}
      */
     #filters = [];
     /**
-     * @type {{}[]}
+     * @type {FilterParams[]}
      */
     #filterParams = [];
     /**
@@ -150,8 +158,8 @@ class ValueSet
     }
 
     /**
-     * @param {function(params: {}, value: number): boolean} filterFunction
-     * @param params
+     * @param {function(params: FilterParams, value: number): boolean} filterFunction
+     * @param {FilterParams} params
      */
     addFilter(filterFunction, params = {})
     {
@@ -242,6 +250,12 @@ class ValueSet
         return this.#filterParams[index][paramName];
     }
 
+    /**
+     * @param {number} index
+     * @param {string} paramName
+     * @param {string, number} value
+     * @return {boolean}
+     */
     setFilterParam(index, paramName, value)
     {
         if (!this.#filterParams[index])
@@ -260,7 +274,7 @@ class ValueSet
     addFilterExact(number)
     {
         this.addFilter(
-            (params, value) => { return value === number; },
+            (params, value) => value === number,
             {type: "exact", unrestricted: false}
         );
     }
@@ -354,7 +368,7 @@ class ValueSet
     /**
      * @param {'underflow'|'overflow'} event
      * @param {function()} callback
-     * @return {boolean}
+     * @return {boolean, null}
      */
     on(event, callback)
     {
@@ -363,8 +377,9 @@ class ValueSet
             if (this.#onOverflow === null && typeof callback === "function")
             {
                 this.#onOverflow = callback;
+                return true;
             }
-            return true;
+            return false;
         }
 
         if (event === "underflow")
@@ -372,14 +387,14 @@ class ValueSet
             if (this.#onUnderflow === null && typeof callback === "function")
             {
                 this.#onUnderflow = callback;
+                return true;
             }
 
-            return true;
+            return false;
         }
 
-        return false;
+        return null;
     }
-
 }
 
 module.exports = {

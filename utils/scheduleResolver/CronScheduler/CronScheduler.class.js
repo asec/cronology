@@ -18,8 +18,10 @@ class CronScheduler
      * @param {string} schedule - For example: * * * * *
      * @param {Date|null} [now = null] - If it's `null` the generator algorithm will use the current date.
      */
-    constructor(schedule, now = null) {
-        if (!(now instanceof Date)) {
+    constructor(schedule, now = null)
+    {
+        if (!(now instanceof Date))
+        {
             now = new Date();
         }
 
@@ -38,6 +40,9 @@ class CronScheduler
         this.#builder.generateInitialValue();
     }
 
+    /**
+     * @return {boolean}
+     */
     isFormatValid()
     {
         return this.#validator.isValid() && this.#builder.isValid();
@@ -58,7 +63,6 @@ class CronScheduler
     {
         return this.#builder.prev();
     }
-
 }
 
 module.exports = {

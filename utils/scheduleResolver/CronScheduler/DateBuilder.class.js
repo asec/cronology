@@ -4,7 +4,6 @@ const { SyntaxValidatorPart } = require("./SyntaxValidatorPart.class");
 
 class DateBuilder
 {
-
     /**
      * @type {ValueSet}
      */
@@ -78,11 +77,6 @@ class DateBuilder
     #createFilters(key, part)
     {
         const translatedKey = this.#translatePartKeyToPropKey(key);
-        if (!translatedKey)
-        {
-            throw new Error("Invalid key: '" + key + "'");
-        }
-
         let prop = this.#getProp(translatedKey);
 
         if (!(prop instanceof ValueSet))
@@ -210,19 +204,19 @@ class DateBuilder
 
         for (let i = 0; i < keys.length; i++)
         {
-            let key = keys[i];
-            let prop = this.#getProp(key);
+            const key = keys[i];
+            const prop = this.#getProp(key);
             if (prop === null)
             {
                 valid = false;
                 break;
             }
-            if (prop.getFilterParam(0, "type") === "undefined")
+            if (typeof prop.getFilterParam(0, "type") === "undefined")
             {
                 valid = false;
                 break;
             }
-            if (key === "day" && prop.getFilterParam(1, "type") === "undefined")
+            if (key === "day" && typeof prop.getFilterParam(1, "type") === "undefined")
             {
                 valid = false;
                 break;
@@ -336,6 +330,7 @@ class DateBuilder
                 this.#minute.first();
             }
         });
+
         this.#day.on("underflow", () => {
             let underflown = !this.#month.prev();
             // Same as with overflow
@@ -357,6 +352,7 @@ class DateBuilder
                 this.#minute.first();
             }
         });
+
         this.#hour.on("underflow", () => {
             let underflown = !this.#day.prev();
             if (!underflown) {
@@ -372,6 +368,7 @@ class DateBuilder
             this.#hour.next();
             this.#minute.first();
         });
+        
         this.#minute.on("underflow", () => {
             this.#hour.prev();
             this.#minute.last();
@@ -521,7 +518,6 @@ class DateBuilder
 
         return this.#date;
     }
-
 }
 
 module.exports = {

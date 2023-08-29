@@ -2,11 +2,11 @@
 
 /**
  * @typedef {Object} SyntaxValidatorPartData
- * @property {string} raw
- * @property {'exact', 'step'} type
- * @property {boolean} valid
- * @property {number} value
- * @property {[number, number]} range
+ * @property {string} [raw]
+ * @property {'exact', 'step'} [type]
+ * @property {boolean} [valid]
+ * @property {number} [value]
+ * @property {[number, number]} [range]
  */
 
 class SyntaxValidatorPart
@@ -22,6 +22,14 @@ class SyntaxValidatorPart
      * @type {[number, number]}
      */
     range = [];
+
+    /**
+     * @param {SyntaxValidatorPartData} [params]
+     */
+    constructor(params = {})
+    {
+        this.update(params);
+    }
 
     /**
      * @param {SyntaxValidatorPartData} params

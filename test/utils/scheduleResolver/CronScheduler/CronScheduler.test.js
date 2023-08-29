@@ -2,58 +2,18 @@
 require("../../../../config/dotenv").environment("test");
 const { test, expect } = require("@jest/globals");
 const { CronScheduler } = require("../../../../utils/scheduleResolver/CronScheduler/CronScheduler.class");
+const { fcProvider, getTableFromProvider } = require("./providers");
 
 test("construct", () => {
-    let cronTiming = "* * * * ";
-    let schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
+    getTableFromProvider(fcProvider).forEach(item => {
+        let cronTiming = item[0];
+        let expected = item[1];
+        let schedule = new CronScheduler(cronTiming);
+        expect(schedule.isFormatValid()).toBe(expected);
+    });
 
-    cronTiming = "* * * * * ";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(true);
-
-    cronTiming = "1 2 3 4 5";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(true);
-
-    cronTiming = "*/1 */2 */3 */4 */5";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(true);
-
-    cronTiming = "*/0 */2 */3 */4 */5";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
-
-    cronTiming = "*/1 */2 */ */4 */5";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
-
-    cronTiming = "70 * * * *";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
-
-    cronTiming = "0 0 1 1 0";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(true);
-
-    cronTiming = "0 24 1 1 0";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
-
-    cronTiming = "0 0 32 1 0";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
-
-    cronTiming = "0 0 1 13 0";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
-
-    cronTiming = "0 0 1 1 7";
-    schedule = new CronScheduler(cronTiming);
-    expect(schedule.isFormatValid()).toBe(false);
-
-    cronTiming = "* * * * *";
-    schedule = new CronScheduler(cronTiming, new Date());
+    let cronTiming = "* * * * *";
+    let schedule = new CronScheduler(cronTiming, new Date());
     expect(schedule.isFormatValid()).toBe(true);
 
     for (let i = 0; i < 5; i++)
@@ -278,7 +238,7 @@ test("generate: forward", () => {
     }
 });
 
-test("generate: teszt", () => {
+test.skip("generate: manual tester", () => {
     let cronTiming = "1 23 1 * */5";
     let now = new Date();
     let schedule = new CronScheduler(cronTiming, new Date(now));
