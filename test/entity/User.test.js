@@ -1,7 +1,8 @@
 "use strict";
 require("../../config/dotenv").environment("test");
 const { beforeAll, afterAll, test, afterEach, expect} = require("@jest/globals");
-const {User} = require("../../model");
+
+const { User, UserRepository } = require("../../model/User");
 const mongoose = require("mongoose");
 const db = require("../db");
 
@@ -14,7 +15,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-    await User.deleteMany();
+    await UserRepository.truncate();
 });
 
 test("Random password generator", async () => {
@@ -22,8 +23,9 @@ test("Random password generator", async () => {
         username: "admin",
         password: ""
     });
+
     let testSize = 10000;
-    expect.assertions(3 * testSize);
+    expect.assertions(3 * testSize + 2);
     for (let i = 0; i < testSize; i++)
     {
         let newPassword = User.generateRandomPassword();
@@ -34,10 +36,14 @@ test("Random password generator", async () => {
 
         await expect(user.validate()).resolves.not.toThrow();
     }
+
+    let newPassword = User.generateRandomPassword(0);
+    expect(newPassword.length).toBeGreaterThanOrEqual(20);
+    expect(newPassword.length).toBeLessThanOrEqual(40);
 });
 
 test("Passwords", async () => {
-    expect.assertions(26);
+    expect.assertions(29);
 
     let rawUserData = {
         username: "admin",
@@ -79,10 +85,20 @@ test("Passwords", async () => {
 
     user = new User({ username: "no-password" });
     expect(() => user.checkPassword("teszt")).toThrow();
+
+    user = new User({
+        username: "teszt4",
+        password: User.generateRandomPassword()
+    });
+    await expect(user.validate()).resolves.not.toThrow();
+    await expect(user.validate()).resolves.not.toThrow();
+
+    user.plainPassword = 10;
+    await expect(user.validate()).rejects.toThrow(mongoose.Error.ValidationError);
 });
 
 test("Create (OK)", async () => {
-    expect.assertions(13);
+    expect.assertions(33);
 
     let rawUserData = {
         username: "admin",
@@ -94,17 +110,51 @@ test("Create (OK)", async () => {
     expect(user.username).toBe(rawUserData.username);
     expect(user.password).not.toBe(rawUserData.password);
     expect(user.checkPassword(rawUserData.password)).toBe(true);
+    expect(user.isAdmin).toBeUndefined();
+    expect(user.accessToken).toBeUndefined();
+    expect(user.accessTokenValid).toBeUndefined();
+    expect(user.loginDate).toBeUndefined();
+    expect(user.id).not.toBeUndefined();
+    expect(user.id).toBeInstanceOf(mongoose.Types.ObjectId);
+    expect(user.created).toBeUndefined();
+    expect(user.updated).toBeUndefined();
 
     await expect(user.save()).resolves.not.toThrow();
 
-    expect(await User.countDocuments()).toBe(1);
+    expect(await UserRepository.countDocuments()).toBe(1);
 
-    let secondUser = new User({ ...rawUserData, password: badpassword });
+    let now = new Date();
+    let dateDiffThreshold = 100;
+    let secondUser = new User({
+        ...rawUserData,
+        password: badpassword,
+        isAdmin: false,
+        accessToken: "a",
+        accessTokenValid: null,
+        loginDate: null
+    });
+    secondUser.isAdmin = true;
+    secondUser.accessToken = "test";
+    secondUser.accessTokenValid = now;
+    secondUser.loginDate = now;
     expect(secondUser.checkPassword(rawUserData.password)).not.toBe(true);
     expect(secondUser.checkPassword(badpassword)).toBe(true);
+    expect(secondUser.isAdmin).toBe(true);
+    expect(secondUser.accessToken).toBe("test");
+    expect(secondUser.accessTokenValid).toStrictEqual(now);
+    expect(secondUser.loginDate).toStrictEqual(now);
 
     await expect(user.save()).resolves.not.toThrow();
     await expect(secondUser.save()).rejects.toThrow();
+
+    expect(secondUser.isAdmin).toBe(true);
+    expect(secondUser.accessToken).toBe("test");
+    expect(secondUser.accessTokenValid).toStrictEqual(now);
+    expect(secondUser.loginDate).toStrictEqual(now);
+    expect(secondUser.created).toBeInstanceOf(Date);
+    expect(secondUser.updated).toBeInstanceOf(Date);
+    expect(secondUser.created - now).toBeLessThanOrEqual(dateDiffThreshold);
+    expect(secondUser.updated - now).toBeLessThanOrEqual(dateDiffThreshold);
 
     secondUser.username = rawUserData.username + "2";
 
@@ -112,11 +162,11 @@ test("Create (OK)", async () => {
     expect(secondUser.checkPassword(badpassword)).toBe(true);
 
     await expect(secondUser.save()).resolves.not.toThrow();
-    expect(await User.countDocuments()).toBe(2);
+    expect(await UserRepository.countDocuments()).toBe(2);
 });
 
 test("Read", async () => {
-    expect.assertions(6);
+    expect.assertions(8);
 
     let rawUserData = {
         username: "admin",
@@ -125,19 +175,23 @@ test("Read", async () => {
     let user = new User(rawUserData);
 
     await expect(user.save()).resolves.not.toThrow();
-    expect(await User.countDocuments()).toBe(1);
+    expect(await UserRepository.countDocuments()).toBe(1);
 
-    let sameUser = await User.findOne({ username: rawUserData.username });
+    let sameUser = await UserRepository.findOne({ username: rawUserData.username });
     expect(sameUser).not.toBeNull()
-    expect(sameUser.toObject()).toEqual(user.toObject());
+    expect(sameUser).not.toBe(user);
+    expect(sameUser.toObject()).toStrictEqual(user.toObject());
     expect(sameUser.checkPassword(rawUserData.password)).toBe(true);
 
-    sameUser = await User.findOne({ username: "2" });
+    let thirdUser = await UserRepository.findOne({ username: rawUserData.username });
+    expect(thirdUser.toString()).toBe(sameUser.toString());
+
+    sameUser = await UserRepository.findOne({ username: "2" });
     expect(sameUser).toBeNull();
 });
 
 test("Update", async () => {
-    expect.assertions(8);
+    expect.assertions(13);
 
     let rawUserData = [
         {
@@ -150,7 +204,9 @@ test("Update", async () => {
         }
     ];
     let user = new User(rawUserData[0]);
+    expect(user.plainPassword).not.toBeUndefined();
     await expect(user.save()).resolves.not.toThrow();
+    expect(user.plainPassword).toBeUndefined();
 
     let secondUser = new User(rawUserData[1]);
     await expect(secondUser.save()).resolves.not.toThrow();
@@ -159,20 +215,23 @@ test("Update", async () => {
     let newPassword = User.generateRandomPassword();
     user.password = newPassword;
 
+    expect(user.plainPassword).not.toBeUndefined();
     await expect(user.save()).rejects.toThrow();
+    expect(user.plainPassword).not.toBeUndefined();
 
     user.username = rawUserData[1].username + "2";
     await expect(user.save()).resolves.not.toThrow();
+    expect(user.plainPassword).toBeUndefined();
 
-    let sameUser = await User.findOne({ username: rawUserData[0].username });
+    let sameUser = await UserRepository.findOne({ username: rawUserData[0].username });
     expect(sameUser).toBeNull();
 
-    sameUser = await User.findOne({ username: rawUserData[1].username + "2" });
+    sameUser = await UserRepository.findOne({ username: rawUserData[1].username + "2" });
     expect(sameUser).not.toBeNull();
 
     expect(sameUser.checkPassword(newPassword)).toBe(true);
 
-    expect(await User.countDocuments()).toBe(2);
+    expect(await UserRepository.countDocuments()).toBe(2);
 });
 
 test("Delete", async () => {
@@ -185,9 +244,9 @@ test("Delete", async () => {
     let user = new User(rawUserData);
 
     await expect(user.save()).resolves.not.toThrow();
-    expect(await User.countDocuments()).toBe(1);
+    expect(await UserRepository.countDocuments()).toBe(1);
 
-    await User.deleteOne({ username: "admin" });
+    await UserRepository.deleteOne({ username: "admin" });
 
-    expect(await User.countDocuments()).toBe(0);
+    expect(await UserRepository.countDocuments()).toBe(0);
 });

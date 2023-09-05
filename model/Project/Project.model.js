@@ -1,6 +1,6 @@
 "use strict";
 const mongoose = require("mongoose");
-const User = require("./user");
+const { User } = require("../User/User.class");
 
 const projectSchema = new mongoose.Schema({
 	name: { type: String, required: true },
@@ -31,13 +31,13 @@ const projectSchema = new mongoose.Schema({
 			users.forEach(user => {
 				if (user instanceof User)
 				{
-					if (this.participants.indexOf(user._id) === -1)
+					if (this.participants.indexOf(user.id) === -1)
 					{
 						if (typeof user.__v === "undefined")
 						{
 							throw new Error("You can only add Users to this Project that were already saved beforehand");
 						}
-						this.participants.push(user._id);
+						this.participants.push(user.id);
 					}
 				}
 				else if (user instanceof mongoose.Types.ObjectId)
@@ -55,7 +55,7 @@ const projectSchema = new mongoose.Schema({
 
 			return this.participants;
 		},
-
+		
 		clearParticipants: function ()
 		{
 			this.participants = [];
@@ -63,4 +63,6 @@ const projectSchema = new mongoose.Schema({
 	}
 });
 
-module.exports = mongoose.model("Project", projectSchema);
+const ProjectModel = mongoose.model("Project", projectSchema);
+
+module.exports = ProjectModel;

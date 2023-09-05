@@ -1,12 +1,13 @@
 "use strict";
-const {User} = require("../../model");
 
-class UserRepository
+const { User, UserRepository } = require("../../../model/User");
+
+class UserRepositoryForTests extends UserRepository
 {
 
-    usernames = ["admin", "test", "test2", "admin2", "admintest", "testadmin"];
+    static usernames = ["admin", "test", "test2", "admin2", "admintest", "testadmin"];
 
-    async createAll()
+    static async createAll()
     {
         let users = this.usernames.map(username => {
             return {
@@ -15,17 +16,17 @@ class UserRepository
             };
         });
 
-        await User.insertMany(users);
+        await super.insertMany(users);
 
         return true;
     }
 
-    async truncate()
-    {
-        await User.deleteMany();
-    }
-
-    async get(username = null)
+    /**
+     * @async
+     * @param {null|string|string[]|UserBean|UserBean[]} username
+     * @returns {Promise<User|User[]>}
+     */
+    static async get(username = null)
     {
         let query = null;
         if (Array.isArray(username))
@@ -71,17 +72,28 @@ class UserRepository
 
         if (Array.isArray(query))
         {
-            return User.find({
+            let documents = await UserRepository.model.find({
                 username: {
                     $in: query
                 }
             });
+            /**
+             * @type {User[]}
+             */
+            let result = [];
+            documents.forEach(doc => result.push(new User(doc)));
+            return result;
         }
 
-        return User.findOne(query);
+        return UserRepository.findOne(query);
     }
 
-    mock(username, withPassword = false)
+    /**
+     * @param {string} username
+     * @param {boolean|string} withPassword
+     * @returns {User}
+     */
+    static mock(username, withPassword = false)
     {
         let user = new User({ username });
         if (typeof withPassword === "string")
@@ -96,7 +108,11 @@ class UserRepository
         return user;
     }
 
-    mockRandom(withPassword = false)
+    /**
+     * @param {boolean|string} withPassword
+     * @returns {User}
+     */
+    static mockRandom(withPassword = false)
     {
         let username = "";
         let length = Math.floor(Math.random() * 100 % 21) + 5;
@@ -108,12 +124,13 @@ class UserRepository
         return this.mock(username, withPassword);
     }
 
-    async create(username, password = true)
+    /**
+     * @param {string} username
+     * @param {boolean|string} password
+     * @returns {Promise<User>}
+     */
+    static async create(username, password = true)
     {
-        if (!password)
-        {
-            password = true;
-        }
         let user = this.mock(username, password);
 
         await user.save();
@@ -121,12 +138,12 @@ class UserRepository
         return user;
     }
 
-    async createRandom(password = true)
+    /**
+     * @param {boolean|string} password
+     * @returns {Promise<User>}
+     */
+    static async createRandom(password = true)
     {
-        if (!password)
-        {
-            password = true;
-        }
         let user = this.mockRandom(password);
 
         await user.save();
@@ -136,4 +153,6 @@ class UserRepository
 
 }
 
-module.exports = new UserRepository();
+module.exports = {
+    UserRepository: UserRepositoryForTests
+};

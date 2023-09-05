@@ -1,8 +1,6 @@
 "use strict";
 const CronologyDb = require("../../utils/db/class");
-const Log = require("../../model/log");
-const User = require("../../model/user");
-const Transaction = require("../../model/transaction");
+const { LogRepository } = require("../../model/Log");
 
 class CronologyDbTest extends CronologyDb
 {
@@ -22,7 +20,7 @@ class CronologyDbTest extends CronologyDb
             await this.db.dropCollection(collection);
         }
         await this.disconnect();
-        Log.tearDown();
+        LogRepository.truncateFiles();
 
         return true;
     }

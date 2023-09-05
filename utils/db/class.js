@@ -10,13 +10,20 @@ class CronologyDb
     prepared = false;
     indicesLeftToCreate = 0;
     models = {};
+    reconnectRetries = (process.env.APP_ENV === "test") ? 1 : -1;
+    serverSelectionTimeoutMS = process.env.APP_ENV === "test" ? 100 : 30000;
+
+    /**
+     * @type {function(err: Object)}
+     */
+    #onErrorCallback = null;
 
     async prepare()
     {
-        this.db.on("connecting", this.onConnecting.bind(this));
-        this.db.on("connected", this.onConnected.bind(this));
-        this.db.on("open", this.onOpen.bind(this));
-        this.db.on("error", this.onError.bind(this));
+        this.db.on("connecting", this.#onConnecting.bind(this));
+        this.db.on("connected", this.#onConnected.bind(this));
+        this.db.on("open", this.#onOpen.bind(this));
+        this.db.on("error", this.#onError.bind(this));
 
         this.models = require("../../model");
         this.indicesLeftToCreate = Object.keys(this.models).length;
@@ -47,6 +54,7 @@ class CronologyDb
         await mongoose.connect(this.mongoUri, {
             useUnifiedTopology: true,
             useNewUrlParser: true,
+            serverSelectionTimeoutMS: this.serverSelectionTimeoutMS
         });
 
         return true;
@@ -62,8 +70,19 @@ class CronologyDb
         return true;
     }
 
+    async waitForConnectionStateChange()
+    {
+        while (this.getReadyState() === 2 || this.getReadyState() === 3)
+        {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        return true;
+    }
+
     async disconnect()
     {
+        await this.waitForConnectionStateChange();
         await mongoose.disconnect();
 
         return true;
@@ -74,28 +93,39 @@ class CronologyDb
         return this.db.readyState;
     }
 
-    async onConnecting()
+    /**
+     * @param {'error'} type
+     * @param {function(err: Object)} callback
+     */
+    on(type, callback)
+    {
+        if (type === "error" && typeof callback === "function")
+        {
+            this.#onErrorCallback = callback;
+        }
+    }
+
+    async #onConnecting()
     {
         await Log.log("info", "mongodb", {message: "Connecting to: " + this.mongoUri});
     }
 
-    async onConnected()
+    async #onConnected()
     {
         await Log.log("info", "mongodb", {message: "Connected to database"});
     }
 
-    async onOpen()
+    async #onOpen()
     {
         await Log.log("info", "mongodb", {message: "Connection is now open"});
     }
 
-    async onError(err)
+    async #onError(err)
     {
-        await Log.log("error", "mongodb", err);
-        if (!err.code)
+        await Log.log("error", "mongodb", this.reconnectRetries, err);
+        if (this.#onErrorCallback !== null)
         {
-            await this.disconnect();
-            await this.connect();
+            await this.#onErrorCallback(err);
         }
     }
 

@@ -25,24 +25,39 @@ const logSchema = new mongoose.Schema({
 	},
 	statics: {
 		logFile: "",
+		/**
+		 * @memberOf LogModel
+		 * @return {string}
+		 */
 		getLogFile: function ()
 		{
 			const defaultLogFile = (new Date()).toISOString().split("T")[0];
 			return (typeof this.logFile === "string" && this.logFile) ? this.logFile : defaultLogFile;
 		},
-
+		/**
+		 * @memberOf LogModel
+		 * @param {string} fileName
+		 */
 		setLogFile: function (fileName)
 		{
 			this.logFile = fileName;
 		},
 
+		/**
+		 * @memberOf LogModel
+		 * @async
+		 * @param {string} type
+		 * @param {string} label
+		 * @param {Object} [data = {}]
+		 * @return {Promise<false|LogBean>}
+		 */
 		log: async function(type, label, data = {})
 		{
 			if (process.env.CONF_LOG_DISABLED === "true")
 			{
 				return false;
 			}
-			let entity = new logModel({
+			let entity = new LogModel({
 				type,
 				label,
 				data
@@ -87,7 +102,11 @@ const logSchema = new mongoose.Schema({
 			return entity;
 		},
 
-		tearDown: function ()
+		/**
+		 * @memberOf LogModel
+		 * @return {boolean}
+		 */
+		deleteFiles: function ()
 		{
 			if (process.env.APP_ENV !== "test")
 			{
@@ -126,6 +145,7 @@ const logSchema = new mongoose.Schema({
 	}
 });
 
-const logModel = mongoose.model("Log", logSchema);
 
-module.exports = logModel;
+const LogModel = mongoose.model("Log", logSchema);
+
+module.exports = LogModel;
