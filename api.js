@@ -1,5 +1,8 @@
+"use strict";
+require("./config/dotenv").environment("test");
+const { ApiWithExpress } = require("./src/api/ApiWithExpress.class");
 
-console.log(process.env.APP_ENV);
+ApiWithExpress.init();
 
 /*const db = require("./utils/index.js"),
 	scheduler = require("./scheduler/scheduler.js"),

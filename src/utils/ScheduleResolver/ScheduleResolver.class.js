@@ -97,7 +97,7 @@ class ScheduleResolver
 	}
 
 	/**
-	 * @returns {Date}
+	 * @returns {Date|null}
 	 */
 	next()
 	{

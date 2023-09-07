@@ -34,6 +34,10 @@ function validatePassword()
     return valid;
 }
 
+/**
+ * @param {number} length
+ * @returns {string}
+ */
 function generateRandomPassword(length = 20)
 {
     if (!length || length < 20)
@@ -102,9 +106,21 @@ const userSchema = new mongoose.Schema({
         {
             return bcrypt.hashSync(rawPassword, cryptoSaltLength);
         },
+        /**
+         * @memberOf UserModel
+         * @function
+         * @param {number} length
+         * @returns {string}
+         */
         generateRandomPassword
     },
     methods: {
+        /**
+         * @memberOf UserModel
+         * @instance
+         * @param {string} rawPassword
+         * @returns {boolean}
+         */
         checkPassword: function (rawPassword)
         {
             if (!this.password)
