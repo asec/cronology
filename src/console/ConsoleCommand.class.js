@@ -9,9 +9,13 @@ class ConsoleCommand
      */
     static description = "";
     /**
-     * @type {[string, string][]}
+     * @type {[string, string, any][]}
      */
     static args = [];
+    /**
+     * @type {[string, string, any][]}
+     */
+    static options = [];
 
     static async action(...args)
     {

@@ -2,6 +2,12 @@
 const { ConsoleCommand } = require("../ConsoleCommand.class");
 const { UsersRouteCreateParameters } = require("../../api/parameters/UsersRouteCreateParameters.class");
 const { Api } = require("../../api/Api.class");
+const { User } = require("../../model/User");
+
+/**
+ * @typedef {{}} CreateUserCommandOptions
+ * @property {number} [passwordLength]
+ */
 
 class CreateUserCommand extends ConsoleCommand
 {
@@ -14,28 +20,53 @@ class CreateUserCommand extends ConsoleCommand
             " uppercase letters, numbers and the following characters: '-', '_'."
         ],
         [
-            "<password>",
-            "Must be at least 12 characters long, must contain at least 1 lowercase letter, 1 uppercase letter, 1" +
-            " number, 1 special character."
+            "[password]",
+            "[Optional] Must be at least 12 characters long, must contain at least 1 lowercase letter, 1 uppercase letter, 1" +
+            " number, 1 special character. If omitted will be randomly generated and displayed on success."
+        ]
+    ];
+    static options = [
+        [
+            "-l, --password-length <length>",
+            "The length of the randomly generated password. Only applicable when the command was not supplied with a" +
+            " password.",
+            20
         ]
     ];
 
     /**
      * @param {string} username
-     * @param {string} password
+     * @param {string} [password]
+     * @param {CreateUserCommandOptions} options
      */
-    static async action(username, password)
+    static async action(username, password, options)
     {
+        let wasPasswordSupplied = password !== undefined;
+        let passwordLength = 20;
+        if (!wasPasswordSupplied)
+        {
+            passwordLength = options.passwordLength;
+            if (!passwordLength || isNaN(passwordLength) || passwordLength < 20)
+            {
+                this.printLine("\tError in option `-l, --password-length`: The value must be a number greater than 20.");
+                return;
+            }
+        }
         let params = new UsersRouteCreateParameters({
             username,
-            password
+            password: wasPasswordSupplied ? password : User.generateRandomPassword(passwordLength)
         });
 
         await Api.init();
 
         let result = await Api.execute("put", "/user", params);
+        let resultObj = result.toObject();
+        if (resultObj.success && !wasPasswordSupplied)
+        {
+            resultObj.password = params.password;
+        }
 
-        this.printLine(result.toObject());
+        this.printLine(resultObj);
     }
 }
 

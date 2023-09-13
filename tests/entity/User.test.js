@@ -25,7 +25,7 @@ test("Random password generator", async () => {
     });
 
     let testSize = 10000;
-    expect.assertions(3 * testSize + 2);
+    expect.assertions(8 * testSize + 2);
     for (let i = 0; i < testSize; i++)
     {
         let newPassword = User.generateRandomPassword();
@@ -33,6 +33,20 @@ test("Random password generator", async () => {
 
         expect(user.password).not.toBe(newPassword);
         expect(user.plainPassword).toBe(newPassword);
+        expect(user.plainPassword).toHaveLength(20);
+
+        await expect(user.validate()).resolves.not.toThrow();
+    }
+
+    for (let i = 0; i < testSize; i++)
+    {
+        let length = 20 + (i % 40);
+        let newPassword = User.generateRandomPassword(length);
+        user.plainPassword = newPassword;
+
+        expect(user.password).not.toBe(newPassword);
+        expect(user.plainPassword).toBe(newPassword);
+        expect(user.plainPassword).toHaveLength(length);
 
         await expect(user.validate()).resolves.not.toThrow();
     }

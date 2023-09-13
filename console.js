@@ -2,7 +2,11 @@
 require("./config/dotenv").environment();
 const { program } = require("commander");
 const { Console } = require("./src/console/Console.class");
-const { ScheduleCommand, CreateUserCommand } = require("./src/console/Command");
+const { ConsoleCommand } = require("./src/console/ConsoleCommand.class");
+/**
+ * @type {Object.<string, ConsoleCommand>}
+ */
+const commands = require("./src/console/Command");
 
 program
     .name("console")
@@ -10,8 +14,10 @@ program
     .version("1.0.0", '-v, --version')
 ;
 
-Console.addCommand(ScheduleCommand);
-Console.addCommand(CreateUserCommand);
+for (let className in commands)
+{
+    Console.addCommand(commands[className]);
+}
 
 program.parseAsync()
     .catch(error => console.error(error))
