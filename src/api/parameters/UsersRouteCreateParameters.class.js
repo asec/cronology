@@ -30,6 +30,14 @@ class UsersRouteCreateParameters extends ApiRouteParameters
     }
 
     /**
+     * @param {UsersRouteCreateParametersBean} params
+     */
+    setAll(params)
+    {
+        super.setAll(params);
+    }
+
+    /**
      * @returns {UsersRouteCreateParameters}
      */
     static parse(request)
@@ -43,7 +51,7 @@ class UsersRouteCreateParameters extends ApiRouteParameters
      */
     validate()
     {
-        let usernameRegex = /[a-zA-Z0-9_\-]{5,}/;
+        let usernameRegex = /^[a-zA-Z0-9_\-]{5,}$/;
         let errors = {
             username: "Invalid parameter: 'username'. Must be at least 5 characters long," +
                 " must only contain lowercase and uppercase letters, numbers and the following characters: '_', '-'.",
@@ -55,10 +63,6 @@ class UsersRouteCreateParameters extends ApiRouteParameters
             throw new DisplayableApiException(errors.username);
         }
         if (!validator.matches(this.username, usernameRegex))
-        {
-            throw new DisplayableApiException(errors.username);
-        }
-        if (this.username.length < 5)
         {
             throw new DisplayableApiException(errors.username);
         }

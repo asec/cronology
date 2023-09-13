@@ -26,6 +26,7 @@ class DateBuilder
      */
     #date = null;
     #isInitialized = false;
+    #isPreflightValidationOkay = false;
 
     /**
      * @param {Date} now
@@ -33,7 +34,7 @@ class DateBuilder
      */
     constructor(now, parts)
     {
-        this.#date = now;
+        this.#date = new Date(now);
         this.#setUpProps(parts);
     }
 
@@ -48,7 +49,7 @@ class DateBuilder
             this.#createFilters(key, parts[key]);
         }
 
-        if (!this.isValid())
+        if (!this.isValid(true))
         {
             return false;
         }
@@ -61,10 +62,17 @@ class DateBuilder
             this.#day.setDefaultFilterAggregate("union");
         }
 
+        this.#regenerateDaysInMonth(this.#date.getUTCFullYear(), this.#date.getUTCMonth() + 1, this.#day);
+
         for (let key in parts)
         {
             let prop = this.#getProp(this.#translatePartKeyToPropKey(key));
             prop.filter();
+        }
+
+        if (this.checkMonthDayValidity())
+        {
+            this.#isPreflightValidationOkay = true;
         }
 
         return this.isValid();
@@ -92,7 +100,7 @@ class DateBuilder
                     (params, value) => (value + params.offset) % 7 === part.value,
                     { type: "exact", offset: 0, unrestricted: false }
                 );
-                this.#actualizeDayOfWeekFilterOffset()
+                this.#actualizeDayOfWeekFilterOffsetForCurrentData();
             }
             else
             {
@@ -107,7 +115,7 @@ class DateBuilder
                     (params, value) => (value + params.offset) % 7 % part.value === 0,
                     { type: "step", offset: 0, unrestricted: part.value === 1 }
                 );
-                this.#actualizeDayOfWeekFilterOffset();
+                this.#actualizeDayOfWeekFilterOffsetForCurrentData();
             }
             else
             {
@@ -189,10 +197,55 @@ class DateBuilder
         }
     }
 
+    checkMonthDayValidity()
+    {
+        if (this.#day.empty())
+        {
+            let isValid = false;
+            const validationProps = {
+                month: ValueSet.copy(this.#month),
+                day: ValueSet.copy(this.#day)
+            };
+            let startDate = new Date(this.#date);
+            validationProps.month.first();
+            startDate.setUTCMonth(validationProps.month.current() - 1);
+            startDate.setUTCDate(1);
+            startDate.setUTCHours(0, 0, 0, 0);
+            let maxDate = new Date(startDate);
+            maxDate.setUTCFullYear(maxDate.getUTCFullYear() + 5);
+
+            validationProps.month.on("overflow", () => {
+                startDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+            });
+
+            while (startDate <= maxDate)
+            {
+                this.#regenerateDaysInMonth(
+                    startDate.getUTCFullYear(),
+                    validationProps.month.current(),
+                    validationProps.day
+                );
+
+                if (!validationProps.day.empty()) {
+                    isValid = true;
+                    break;
+                }
+
+                validationProps.month.next();
+                startDate.setUTCMonth(validationProps.month.current() - 1);
+            }
+
+            return isValid;
+        }
+
+        return true;
+    }
+
     /**
+     * @param {boolean} [syntaxOnly = false]
      * @return boolean
      */
-    isValid()
+    isValid(syntaxOnly = false)
     {
         let valid = true;
         let keys = [
@@ -221,14 +274,24 @@ class DateBuilder
                 valid = false;
                 break;
             }
-            if (prop.empty())
+            if (syntaxOnly && prop.empty())
+            {
+                valid = false;
+                break;
+            }
+            if (!syntaxOnly && key !== "day" && prop.empty())
             {
                 valid = false;
                 break;
             }
         }
 
-        return valid;
+        if (syntaxOnly)
+        {
+            return valid;
+        }
+
+        return valid && this.#isPreflightValidationOkay;
     }
 
     generateInitialValue()
@@ -250,7 +313,7 @@ class DateBuilder
         let overflown = this.#getNextMonthRelativeToNow();
         if (!overflown)
         {
-            this.#regenerateDaysInMonth();
+            this.#regenerateDaysInMonthForCurrentData();
             let isSelectedMonthInTheFuture = (
                 this.#date.getUTCFullYear() !== now.getUTCFullYear() ||
                 this.#month.current() !== now.getUTCMonth() + 1
@@ -302,7 +365,12 @@ class DateBuilder
         this.#month.on("overflow", () => {
             this.#date.setUTCFullYear(this.#date.getUTCFullYear() + 1);
             this.#month.first();
-            this.#regenerateDaysInMonth();
+            this.#regenerateDaysInMonthForCurrentData();
+            while (this.#day.empty())
+            {
+                this.#month.next();
+                this.#regenerateDaysInMonthForCurrentData();
+            }
             this.#day.first();
             this.#hour.first();
             this.#minute.first();
@@ -311,7 +379,12 @@ class DateBuilder
         this.#month.on("underflow", () => {
             this.#date.setUTCFullYear(this.#date.getUTCFullYear() - 1);
             this.#month.last();
-            this.#regenerateDaysInMonth();
+            this.#regenerateDaysInMonthForCurrentData();
+            while (this.#day.empty())
+            {
+                this.#month.prev();
+                this.#regenerateDaysInMonthForCurrentData();
+            }
             this.#day.last();
             this.#hour.last();
             this.#minute.last();
@@ -324,7 +397,12 @@ class DateBuilder
             let overflown = !this.#month.next();
             // If there was an overflow, the month overflow event already set these, no need to do it twice
             if (!overflown) {
-                this.#regenerateDaysInMonth();
+                this.#regenerateDaysInMonthForCurrentData();
+                while (this.#day.empty())
+                {
+                    this.#month.next();
+                    this.#regenerateDaysInMonthForCurrentData();
+                }
                 this.#day.first();
                 this.#hour.first();
                 this.#minute.first();
@@ -335,7 +413,12 @@ class DateBuilder
             let underflown = !this.#month.prev();
             // Same as with overflow
             if (!underflown) {
-                this.#regenerateDaysInMonth();
+                this.#regenerateDaysInMonthForCurrentData();
+                while (this.#day.empty())
+                {
+                    this.#month.prev();
+                    this.#regenerateDaysInMonthForCurrentData();
+                }
                 this.#day.last();
                 this.#hour.last();
                 this.#minute.last();
@@ -368,43 +451,97 @@ class DateBuilder
             this.#hour.next();
             this.#minute.first();
         });
-        
+
         this.#minute.on("underflow", () => {
             this.#hour.prev();
             this.#minute.last();
         });
     }
 
-    #getDaysInCurrentMonth()
+    /**
+     * @param {number} year
+     * @param {number} month - Number of the month of the year. Can be a number 1 - 12.
+     * @returns {number}
+     */
+    #getDaysInMonth(year, month)
     {
+        /*return (new Date(Date.UTC(
+            !year ? this.#date.getUTCFullYear() : year,
+            month < 1 ? this.#month.current() : month,
+            0
+        ))).getUTCDate();*/
         return (new Date(Date.UTC(
-            this.#date.getUTCFullYear(),
-            this.#month.current(),
+            year,
+            month,
             0
         ))).getUTCDate();
     }
 
-    #regenerateDaysInMonth()
+    /**
+     * This deletes the currently selected day, because it re-filters the #days ValueSet.
+     * @param {number} year
+     * @param {number} month - Number of the month of the year. Can be a number 1 - 12.
+     * @param {ValueSet} dayValueSet
+     */
+    #regenerateDaysInMonth(year, month, dayValueSet)
     {
-        this.#day.generate(
+        // useProps = true
+        /*dayValueSet.generate(
             1,
-            this.#getDaysInCurrentMonth()
+            this.#getDaysInMonth(
+                0,
+                useProps
+                    ? this.#month.current()
+                    : (monthToCheck < 1 ? this.#date.getUTCMonth() + 1 : monthToCheck)
+            )
         );
-        this.#actualizeDayOfWeekFilterOffset(true);
-        this.#day.filter();
+        this.#actualizeDayOfWeekFilterOffset(useProps);
+        dayValueSet.filter();*/
+        dayValueSet.generate(
+            1,
+            this.#getDaysInMonth(year, month)
+        );
+        this.#actualizeDayOfWeekFilterOffset(year, month, dayValueSet);
+        dayValueSet.filter();
+    }
+
+    #regenerateDaysInMonthForCurrentData()
+    {
+        this.#regenerateDaysInMonth(
+            this.#date.getUTCFullYear(),
+            this.#month.current(),
+            this.#day
+        );
     }
 
     /**
-     * @param {boolean} [useProps = false]
+     * @param {number} year
+     * @param {number} month - Number of the month of the year. Can be a number 1 - 12.
+     * @param {ValueSet} dayValueSet
      */
-    #actualizeDayOfWeekFilterOffset(useProps = false)
+    #actualizeDayOfWeekFilterOffset(year, month, dayValueSet)
     {
-        let firstOfCurrentMonth = new Date(Date.UTC(
+        /*let firstOfCurrentMonth = new Date(Date.UTC(
             this.#date.getUTCFullYear(),
             useProps ? this.#month.current() - 1 : this.#date.getUTCMonth(),
             1
         ));
-        this.#day.setFilterParam(1, "offset", firstOfCurrentMonth.getUTCDay() - 1);
+        this.#day.setFilterParam(1, "offset", firstOfCurrentMonth.getUTCDay() - 1);*/
+        let firstOfCurrentMonth = new Date(Date.UTC(
+            year,
+            month - 1,
+            1
+        ));
+        dayValueSet.setFilterParam(1, "offset", firstOfCurrentMonth.getUTCDay() - 1);
+    }
+
+    #actualizeDayOfWeekFilterOffsetForCurrentData()
+    {
+        this.#actualizeDayOfWeekFilterOffset(
+            this.#date.getUTCFullYear(),
+            this.#date.getUTCMonth() + 1,
+            this.#day
+        );
     }
 
     #actualizeDate()
@@ -450,7 +587,6 @@ class DateBuilder
             let cValue = this.#date.getUTCDate();
             overflown = !this.#day.searchNext(cValue);
         }
-
 
         return overflown;
     }

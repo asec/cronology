@@ -3,7 +3,7 @@ const { Entity } = require("../Entity.class");
 const UserModel = require("./User.model");
 
 /**
- * @typedef {Object} UserBean
+ * @typedef {{}} UserBean
  * @property {string} username
  * @property {string} [password]
  * @property {boolean} [isAdmin]

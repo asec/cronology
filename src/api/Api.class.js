@@ -1,4 +1,7 @@
 "use strict";
+const crypto = require("crypto");
+const db = require("../utils/db");
+
 const { ApiRoute } = require("./ApiRoute.class");
 const { ApiResponse } = require("./responses/ApiResponse.class");
 const { ApiError } = require("./responses/ApiError.class");
@@ -19,8 +22,9 @@ class Api
         delete: {}
     };
 
-    static init()
+    static async init()
     {
+        await db.connect();
         this.addAllRoutes();
     }
 
@@ -138,11 +142,13 @@ class Api
      * @param {string} method
      * @param {string} route
      * @param {ApiRouteParameters} [params]
+     * @param {string} [requestId]
      * @returns {Promise<ApiResponse>}
      * @throws {Error}
      */
-    static async execute(method, route, params = undefined)
+    static async execute(method, route, params = undefined, requestId = undefined)
     {
+        requestId = requestId || crypto.randomUUID();
         if (!this.hasRoute(method, route))
         {
             throw new Error("API Execution fail: The given route is invalid: '" + method + " " + route + "'");
@@ -161,25 +167,10 @@ class Api
          */
         catch (e)
         {
-            let logParams = undefined;
-            if (params instanceof ApiRouteParameters)
-            {
-                logParams = params.sanitize();
-            }
-            await Log.log("error", "api", {
-                cause: "Error in action handler on route '" + method + " " + route + "'",
-                route: {
-                    method,
-                    route,
-                    params: logParams
-                },
-                error: {
-                    code: e.code,
-                    message: e.message,
-                    cause: e.cause,
-                    stack: e.stack
-                }
-            });
+            await this.#logError(
+                requestId, "Error in action handler on route '" + method + " " + route + "'",
+                method, route, params, e
+            );
             apiResponse = new ApiError({
                 error: e.message,
                 displayable: (e.hasOwnProperty("displayable") ? e.displayable : false)
@@ -208,6 +199,39 @@ class Api
         }
 
         return routes;
+    }
+
+    /**
+     * @param {string} requestId
+     * @param {string} cause
+     * @param {string} method
+     * @param {string} route
+     * @param {ApiRouteParameters} params
+     * @param {Error} e
+     * @returns {Promise<false|Log>}
+     */
+    static async #logError(requestId, cause, method, route, params, e)
+    {
+        let logParams = undefined;
+        if (params instanceof ApiRouteParameters)
+        {
+            logParams = params.sanitize();
+        }
+        return Log.log("error", "api", {
+            id: requestId,
+            cause,
+            route: {
+                method,
+                route,
+                params: logParams
+            },
+            error: {
+                code: e.code,
+                message: e.message,
+                cause: e.cause,
+                stack: e.stack
+            }
+        });
     }
 }
 

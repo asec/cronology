@@ -13,16 +13,25 @@ class ConsoleCommand
      */
     static args = [];
 
-    static action(...args)
+    static async action(...args)
     {
         console.log(args);
     }
 
     static inputChar()
     {
+        process.stdin.setRawMode(true);
         let buffer = Buffer.alloc(1);
         fs.readSync(0, buffer, 0, 1);
         return buffer.toString("utf8");
+    }
+
+    /**
+     * @param {*} anything
+     */
+    static printLine(anything)
+    {
+        console.log("\n", anything, "\n");
     }
 }
 

@@ -1,11 +1,10 @@
 "use strict";
 
 /**
- * @typedef {Object} FilterParams
+ * @typedef {Object & any} FilterParams
  * @property {'exact', 'step'} type
  * @property {number} [offset]
  * @property {boolean} unrestricted
- * @property {...*} [anything-else]
  */
 
 class ValueSet
@@ -274,7 +273,7 @@ class ValueSet
     addFilterExact(number)
     {
         this.addFilter(
-            (params, value) => value === number,
+            function (params, value) { return  value === number },
             {type: "exact", unrestricted: false}
         );
     }
@@ -299,7 +298,7 @@ class ValueSet
     addFilterStep(step, min = null, max = null)
     {
         this.addFilter(
-            (params, value) => {
+            function (params, value) {
                 let cMin = min, cMax = max;
                 if (cMin === null)
                 {
@@ -394,6 +393,24 @@ class ValueSet
         }
 
         return null;
+    }
+
+    /**
+     * @param {ValueSet} valueSet
+     * @returns {ValueSet}
+     */
+    static copy(valueSet)
+    {
+        let newObject = new ValueSet();
+        newObject.#values = valueSet.#values;
+        newObject.#current = valueSet.#current;
+        newObject.#onOverflow = valueSet.#onOverflow === null ? null : valueSet.#onOverflow.bind(newObject);
+        newObject.#onUnderflow = valueSet.#onUnderflow === null ? null : valueSet.#onUnderflow.bind(newObject);
+        newObject.#filters = valueSet.#filters.map(fnc => fnc.bind(newObject));
+        newObject.#filterParams = valueSet.#filterParams.map(param => { return {...param}});
+        newObject.#defaultFilterAggregate = valueSet.#defaultFilterAggregate;
+
+        return newObject;
     }
 }
 

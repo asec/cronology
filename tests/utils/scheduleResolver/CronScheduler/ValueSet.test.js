@@ -714,3 +714,203 @@ test(".values error while not in test environment", () => {
 
     process.env.APP_ENV = currentEnv;
 });
+
+test("copy", () => {
+    let valueSet = new ValueSet(0, 10);
+    let copySet = ValueSet.copy(valueSet);
+    expect(valueSet === copySet).toBe(false);
+    expect(valueSet.values).toStrictEqual(copySet.values);
+
+    copySet.generate(20, 25);
+    expect(valueSet.values).not.toStrictEqual(copySet.values);
+
+    valueSet.generate(5, 6);
+    valueSet.searchNext(5);
+
+    copySet = ValueSet.copy(valueSet);
+    expect(valueSet.current()).toBe(copySet.current());
+
+    copySet.generate(10, 20);
+    expect(valueSet.current()).toBe(5);
+    expect(() => copySet.current()).toThrow();
+
+    copySet.searchNext(6);
+    expect(valueSet.current()).toBe(5);
+    expect(copySet.current()).toBe(10);
+
+    valueSet.next();
+    expect(valueSet.current()).toBe(6);
+    expect(copySet.current()).toBe(10);
+
+    valueSet.next();
+    expect(valueSet.current()).toBe(5);
+    expect(copySet.current()).toBe(10);
+
+    copySet.next();
+    expect(valueSet.current()).toBe(5);
+    expect(copySet.current()).toBe(11);
+
+    valueSet.generate(1, 3);
+    copySet.generate(4, 6);
+
+    valueSet.searchNext(0);
+    copySet.searchNext(5);
+    expect(valueSet.current()).toBe(1);
+    expect(copySet.current()).toBe(5);
+
+    valueSet.prev();
+    expect(valueSet.current()).toBe(3);
+    expect(copySet.current()).toBe(5);
+
+    valueSet.prev();
+    expect(valueSet.current()).toBe(2);
+    expect(copySet.current()).toBe(5);
+
+    copySet.prev();
+    expect(valueSet.current()).toBe(2);
+    expect(copySet.current()).toBe(4);
+
+    valueSet.prev();
+    expect(valueSet.current()).toBe(1);
+    expect(copySet.current()).toBe(4);
+
+    copySet.prev();
+    expect(valueSet.current()).toBe(1);
+    expect(copySet.current()).toBe(6);
+
+    copySet.prev();
+    expect(valueSet.current()).toBe(1);
+    expect(copySet.current()).toBe(5);
+
+    valueSet.generate(1, 5);
+    valueSet.searchNext(3);
+    copySet = ValueSet.copy(valueSet);
+    valueSet.next();
+    copySet.prev();
+    expect(valueSet.current()).toBe(4);
+    expect(copySet.current()).toBe(2);
+    copySet.next();
+    valueSet.prev();
+    expect(valueSet.current()).toBe(3);
+    expect(copySet.current()).toBe(3);
+
+    valueSet.generate(5, 5);
+    let counter = 0;
+    valueSet.on("overflow", () => {
+        counter++;
+    });
+    valueSet.on("underflow", () => {
+        counter--;
+    });
+    valueSet.searchNext(5);
+    copySet = ValueSet.copy(valueSet);
+
+    expect(counter).toBe(0);
+    valueSet.next();
+    expect(counter).toBe(1);
+    copySet.next();
+    expect(counter).toBe(2);
+    copySet.next();
+    expect(counter).toBe(3);
+    valueSet.prev();
+    expect(counter).toBe(2);
+    copySet.prev();
+    expect(counter).toBe(1);
+    valueSet.next();
+    copySet.prev();
+    expect(counter).toBe(1);
+    copySet.next();
+    copySet.next();
+    valueSet.prev();
+    expect(counter).toBe(2);
+
+    valueSet = ValueSet.copy(copySet);
+    expect(valueSet.current()).toBe(5);
+
+    valueSet.generate(1, 10);
+    valueSet.addFilterExact(2);
+    valueSet.filter();
+    copySet.filter();
+    expect(valueSet.values).toStrictEqual([2]);
+    expect(copySet.values).toStrictEqual([5]);
+
+    copySet = ValueSet.copy(valueSet);
+    valueSet.generate(1, 10);
+    copySet.generate(1, 10);
+    copySet.resetFilters();
+    valueSet.filter();
+    copySet.filter();
+    expect(valueSet.values).toStrictEqual([2]);
+    expect(copySet.values).toStrictEqual(generateTestArray([1, 10]));
+
+    copySet.addFilterStep(2);
+    copySet.addFilterStep(3);
+
+    valueSet.generate(1, 10);
+    copySet.generate(1, 10);
+    valueSet.filter();
+    copySet.filter();
+    expect(valueSet.values).toStrictEqual([2]);
+    expect(copySet.values).toStrictEqual([6]);
+
+    valueSet = ValueSet.copy(copySet);
+    valueSet.generate(10, 30);
+    valueSet.filter();
+    // Inner .#filter function binds are okay
+    expect(valueSet.values).toStrictEqual([12, 18, 24, 30]);
+
+    copySet.addFilter(
+        (params, value) => value === params.exact,
+        { type: "teszt", unrestricted: true, exact: 6 }
+    );
+    copySet.generate(1, 10);
+    copySet.filter();
+    expect(copySet.values).toStrictEqual([6]);
+
+    expect(copySet.getFilterParam(2, "type")).toBe("teszt");
+    expect(valueSet.getFilterParam(2, "type")).toBeUndefined();
+
+    copySet.setFilterParam(2, "exact", 12);
+    copySet.generate(1, 10);
+    copySet.filter();
+    expect(copySet.values).toStrictEqual([]);
+
+    valueSet.generate(10, 30);
+    valueSet.filter();
+    expect(valueSet.values).toStrictEqual([12, 18, 24, 30]);
+
+    valueSet = ValueSet.copy(copySet);
+    valueSet.generate(10, 30);
+    valueSet.filter();
+    expect(valueSet.values).toStrictEqual([12]);
+
+    copySet.setFilterParam(2, "exact", 6);
+    valueSet.setFilterParam(2, "exact", 24);
+
+    copySet.generate(1, 10);
+    copySet.filter();
+    valueSet.generate(10, 30);
+    valueSet.filter();
+
+    expect(copySet.values).toStrictEqual([6]);
+    expect(valueSet.values).toStrictEqual([24]);
+
+    valueSet.setFilterParam(0, "type", "tst");
+
+    expect(copySet.getFilterParam(0, "type")).toBe("step");
+    expect(valueSet.getFilterParam(0, "type")).toBe("tst");
+    expect(copySet.getFilterParam(2, "exact")).toBe(6);
+    expect(valueSet.getFilterParam(2, "exact")).toBe(24);
+
+    valueSet = new ValueSet(0, 10);
+    valueSet.addFilterExact(1);
+    valueSet.addFilterExact(2);
+    copySet = ValueSet.copy(valueSet);
+
+    valueSet.setDefaultFilterAggregate("union");
+    valueSet.filter();
+    copySet.filter();
+
+    expect(valueSet.values).toStrictEqual([1, 2]);
+    expect(copySet.values).toStrictEqual([]);
+});

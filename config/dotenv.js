@@ -2,21 +2,49 @@
 // Loading the basic configuration
 require("dotenv").config();
 
-/**
- * @param {'dev', 'test'} [env = "dev"]
- */
-function environment(env = "dev")
-{
-    switch (env)
+const dotenv = {
+    /**
+     * @param {'dev', 'test'} [env = "dev"]
+     */
+    environment: function (env = "dev")
     {
-        case "test":
-            extendConfiguration([".env.test", ".env.test.local"]);
-            break;
-        default:
-            extendConfiguration(".env.local");
-    }
-}
+        switch (env)
+        {
+            case "test":
+                extendConfiguration([".env.test", ".env.test.local"]);
+                break;
+            default:
+                extendConfiguration(".env.local");
+        }
 
+        return this;
+    },
+
+    enableLogging: function ()
+    {
+        toggleLogging(true);
+    },
+
+    disableLogging: function ()
+    {
+        toggleLogging(false);
+    },
+
+    enableSilentLogging: function ()
+    {
+        toggleSilentLogging(true);
+    },
+
+    disableSilentLogging: function ()
+    {
+        toggleSilentLogging(false);
+    }
+};
+
+/**
+ * @param {string|string[]} fileName
+ * @returns {boolean}
+ */
 function extendConfiguration(fileName)
 {
     if (!Array.isArray(fileName))
@@ -36,6 +64,20 @@ function extendConfiguration(fileName)
     return success;
 }
 
-module.exports = {
-    environment
-};
+/**
+ * @param {boolean} state
+ */
+function toggleLogging(state)
+{
+    process.env.CONF_LOG_DISABLED = !state ? "true" : "false";
+}
+
+/**
+ * @param {boolean} state
+ */
+function toggleSilentLogging(state)
+{
+    process.env.CONF_LOG_SILENT = state ? "true" : "false";
+}
+
+module.exports = dotenv;

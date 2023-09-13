@@ -51,6 +51,11 @@ class Db
 
         this.indicesLeftToCreate = Object.keys(this.models).length;
 
+        if (this.getReadyState() === 1)
+        {
+            return true;
+        }
+
         await mongoose.connect(this.mongoUri, {
             useUnifiedTopology: true,
             useNewUrlParser: true,

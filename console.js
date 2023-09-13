@@ -2,7 +2,7 @@
 require("./config/dotenv").environment();
 const { program } = require("commander");
 const { Console } = require("./src/console/Console.class");
-const { ScheduleCommand } = require("./src/console/Command");
+const { ScheduleCommand, CreateUserCommand } = require("./src/console/Command");
 
 program
     .name("console")
@@ -11,5 +11,8 @@ program
 ;
 
 Console.addCommand(ScheduleCommand);
+Console.addCommand(CreateUserCommand);
 
-program.parse();
+program.parseAsync()
+    .catch(error => console.error(error))
+    .finally(() => process.exit());

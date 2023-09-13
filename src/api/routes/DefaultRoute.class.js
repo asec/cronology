@@ -11,6 +11,7 @@ class DefaultRoute extends ApiRoute
         if (process.env.APP_ENV === "test")
         {
             this.addRoute("get", "/test-error", this.testError);
+            this.addRoute("get", "/bad-response", this.badResponse);
         }
     }
 
@@ -27,6 +28,11 @@ class DefaultRoute extends ApiRoute
     static testError()
     {
         throw new Error("Teszt error");
+    }
+
+    static badResponse()
+    {
+
     }
 }
 

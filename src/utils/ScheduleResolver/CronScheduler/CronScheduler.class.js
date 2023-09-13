@@ -43,7 +43,7 @@ class CronScheduler
     /**
      * @return {boolean}
      */
-    isFormatValid()
+    isValid()
     {
         return this.#validator.isValid() && this.#builder.isValid();
     }
@@ -53,6 +53,10 @@ class CronScheduler
      */
     next()
     {
+        if (!this.#builder)
+        {
+            throw new Error("Can't generate next date because the syntax validation failed.")
+        }
         return this.#builder.next();
     }
 
@@ -61,6 +65,10 @@ class CronScheduler
      */
     prev()
     {
+        if (!this.#builder)
+        {
+            throw new Error("Can't generate next date because the syntax validation failed.")
+        }
         return this.#builder.prev();
     }
 }

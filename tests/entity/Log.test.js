@@ -1,5 +1,5 @@
 "use strict";
-require("../../config/dotenv").environment("test");
+const env = require("../../config/dotenv").environment("test");
 const { test, expect, afterEach, afterAll } = require("@jest/globals");
 const { Log, LogRepository } = require("../../src/model/Log");
 const path = require("path");
@@ -44,26 +44,16 @@ function getLineCount(file)
     });
 }
 
-function disableLogging()
-{
-    process.env.CONF_LOG_DISABLED = true;
-}
-
-function enableLogging()
-{
-    process.env.CONF_LOG_DISABLED = false;
-}
-
 test("log", async () => {
     let logFileName = "test-" + Math.round(Math.random() * 10000);
     expect(Log.getLogFile()).not.toBe(logFileName);
     Log.setLogFile(logFileName);
     expect(Log.getLogFile()).toBe(logFileName);
 
-    disableLogging();
+    env.disableLogging();
     expect(await Log.log("info", "first test")).toBe(false);
     expect(await getLineCount(logPath + "/" + logFileName)).toBe(-1);
-    enableLogging();
+    env.enableLogging();
 
     let log = await Log.log("test", "valami", {"a": "b"});
     expect(log.type).toBe("test");
@@ -97,10 +87,10 @@ test("log", async () => {
     expect(await getLineCount(logPath + "/" + logFileName)).toBe(3);
     expect(await LogRepository.countDocuments()).toBe(4);
 
-    disableLogging();
+    env.disableLogging();
     expect(await Log.log("success2", "Last hurray", null)).toBe(false);
     expect(await LogRepository.countDocuments()).toBe(4);
-    enableLogging();
+    env.enableLogging();
 
     await db.disconnect();
     await Log.log("success", "Valami\n teszt 2", log);

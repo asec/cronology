@@ -32,7 +32,7 @@ class ApiResponse
         let success = true;
         if (value === undefined)
         {
-            if (typeof key !== "object")
+            if (!key || typeof key !== "object")
             {
                 return false;
             }
@@ -74,7 +74,21 @@ class ApiResponse
      */
     toObject()
     {
-        return this.data;
+        return {...this.data};
+    }
+
+    /**
+     * @param {Object} object
+     * @returns {{}}
+     */
+    sanitizeDbObject(object)
+    {
+        let result = {...object};
+        result.id = String(object._id);
+        delete result._id;
+        delete result.__v;
+
+        return result;
     }
 }
 

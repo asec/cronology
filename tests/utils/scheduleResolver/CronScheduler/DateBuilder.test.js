@@ -113,6 +113,9 @@ test("Failure on invalid or missing props in SyntaxBuilder", () => {
     let cronTiming = "* * * * *";
     let now = new Date();
     let validator = new SyntaxValidator(cronTiming);
+    /**
+     * @type {DateBuilder}
+     */
     let builder;
 
     validator.parts.invalid = validator.parts.hour;
@@ -125,7 +128,39 @@ test("Failure on invalid or missing props in SyntaxBuilder", () => {
 
     cronTiming = "1 2 3 4 5";
     validator = new SyntaxValidator(cronTiming);
-    validator.parts.hour.value = 55;
+    validator.parts.minute.value = 99;
+    expect(() => builder = new DateBuilder(now, validator.parts)).not.toThrow();
+    expect(builder.isValid()).toBe(false);
+
+    validator = new SyntaxValidator(cronTiming);
+    validator.parts.hour.value = 99;
+    expect(() => builder = new DateBuilder(now, validator.parts)).not.toThrow();
+    expect(builder.isValid()).toBe(false);
+
+    cronTiming = "1 2 3 4 *";
+    validator = new SyntaxValidator(cronTiming);
+    validator.parts.dayOfMonth.value = 99;
+    expect(() => builder = new DateBuilder(now, validator.parts)).not.toThrow();
+    expect(builder.isValid()).toBe(false);
+    expect(builder.isValid(true)).toBe(false);
+
+    cronTiming = "1 2 * 4 5";
+    validator = new SyntaxValidator(cronTiming);
+    validator.parts.dayOfWeek.value = 99;
+    expect(() => builder = new DateBuilder(now, validator.parts)).not.toThrow();
+    expect(builder.isValid()).toBe(false);
+    expect(builder.isValid(true)).toBe(false);
+
+    cronTiming = "1 2 3 4 5";
+    validator = new SyntaxValidator(cronTiming);
+    validator.parts.dayOfMonth.value = 99;
+    validator.parts.dayOfWeek.value = 99;
+    expect(() => builder = new DateBuilder(now, validator.parts)).not.toThrow();
+    expect(builder.isValid()).toBe(false);
+    expect(builder.isValid(true)).toBe(false);
+
+    validator = new SyntaxValidator(cronTiming);
+    validator.parts.month.value = 99;
     expect(() => builder = new DateBuilder(now, validator.parts)).not.toThrow();
     expect(builder.isValid()).toBe(false);
 });

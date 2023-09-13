@@ -89,7 +89,7 @@ class ScheduleResolver
 	#resolveFromCronFormat(schedule, now = null)
 	{
 		let cronSchedule = new CronScheduler(schedule, now);
-		if (cronSchedule.isFormatValid())
+		if (cronSchedule.isValid())
 		{
 			this.isRepeatable = true;
 			this.#cronSchedule = cronSchedule;

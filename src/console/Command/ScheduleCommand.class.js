@@ -16,7 +16,7 @@ class ScheduleCommand extends ConsoleCommand
 
     static continuePromptText = "<Enter>: next date";
 
-    static action(schedule)
+    static async action(schedule)
     {
         let now = new Date();
         let scheduler = new ScheduleResolver(schedule, now);
@@ -26,7 +26,7 @@ class ScheduleCommand extends ConsoleCommand
             let next = scheduler.next();
             if (next === null)
             {
-                console.error("\n\tError: Invalid `schedule` parameter '" + schedule + "'.\n");
+                console.error("\n\tError: Invalid parameter `schedule`: '" + schedule + "'.\n");
                 break;
             }
             this.printDate("Now", now);
