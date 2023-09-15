@@ -41,7 +41,7 @@ class UserRepository extends EntityRepository
      * @param {mongoose.FilterQuery<UserBeanSearch>} [filter]
      * @param {mongoose.ProjectionType<UserBeanSearch>|null} [projection]
      * @param {mongoose.QueryOptions<UserBeanSearch>|null} [options]
-     * @returns {User|null}
+     * @returns {Promise<User|null>}
      */
     static async findOne(filter, projection = null, options = null)
     {

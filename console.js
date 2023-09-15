@@ -1,5 +1,5 @@
 "use strict";
-require("./config/dotenv").environment();
+require("./config/dotenv").environment().extendWith(".env.console");
 const { program } = require("commander");
 const { Console } = require("./src/console/Console.class");
 const { ConsoleCommand } = require("./src/console/ConsoleCommand.class");

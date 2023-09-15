@@ -8,6 +8,7 @@ const dotenv = {
      */
     environment: function (env = "dev")
     {
+        extendConfiguration(".env");
         switch (env)
         {
             case "test":
@@ -18,6 +19,14 @@ const dotenv = {
         }
 
         return this;
+    },
+
+    /**
+     * @param {string} filename
+     */
+    extendWith(filename)
+    {
+        extendConfiguration([filename, filename + ".local"]);
     },
 
     enableLogging: function ()

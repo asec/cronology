@@ -82,6 +82,7 @@ class ApiWithExpress
                 if (parameterClass)
                 {
                     params = parameterClass.parse(req);
+                    await params.validate();
                 }
             }
             /**
@@ -136,6 +137,7 @@ class ApiWithExpress
             request: {
                 baseUrl: req.baseUrl,
                 body,
+                params: req.params,
                 hostname: req.hostname,
                 ip: req.ip,
                 ips: req.ips,

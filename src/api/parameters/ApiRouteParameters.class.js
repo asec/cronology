@@ -52,10 +52,10 @@ class ApiRouteParameters
 
     /**
      * @abstract
-     * @returns {boolean}
+     * @returns {Promise<boolean>}
      * @throws {Error}
      */
-    validate() {}
+    async validate() {}
 
     sanitize()
     {
@@ -65,6 +65,14 @@ class ApiRouteParameters
         }
 
         return this;
+    }
+
+    /**
+     * @returns {{}}
+     */
+    toObject()
+    {
+        return {...this};
     }
 }
 

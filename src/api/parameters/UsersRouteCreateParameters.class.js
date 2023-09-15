@@ -1,5 +1,5 @@
 "use strict";
-const { ApiRouteParameters } = require("./ApiRouteParameters.class");
+const { AppAuthenticationParameters } = require("./AppAuthenticationParameters.class");
 const validator = require("validator");
 const { DisplayableApiException } = require("../../exception");
 
@@ -9,7 +9,7 @@ const { DisplayableApiException } = require("../../exception");
  * @property {string} password
  */
 
-class UsersRouteCreateParameters extends ApiRouteParameters
+class UsersRouteCreateParameters extends AppAuthenticationParameters
 {
     /**
      * @type {string}
@@ -42,15 +42,21 @@ class UsersRouteCreateParameters extends ApiRouteParameters
      */
     static parse(request)
     {
-        return new UsersRouteCreateParameters(request.body);
+        /**
+         * @type {UsersRouteCreateParameters}
+         */
+        let result = super.parse(request);
+        result.setAll(request.body);
+        return result;
     }
 
     /**
-     * @returns {boolean}
+     * @returns {Promise<boolean>}
      * @throws {DisplayableApiException}
      */
-    validate()
+    async validate()
     {
+        await super.validate();
         let usernameRegex = /^[a-zA-Z0-9_\-]{5,}$/;
         let errors = {
             username: "Invalid parameter: 'username'. Must be at least 5 characters long," +

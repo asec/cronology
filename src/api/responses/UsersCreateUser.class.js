@@ -1,12 +1,12 @@
 "use strict";
-const { ApiResponse } = require("./ApiResponse.class");
+const { ApiResult } = require("./ApiResult.class");
 
 /**
- * @typedef {ApiResponseBean} UsersCreateUserBean
+ * @typedef {ApiResultBean} UsersCreateUserBean
  * @property {UserBean} [result]
  */
 
-class UsersCreateUser extends ApiResponse
+class UsersCreateUser extends ApiResult
 {
     /**
      * @type {UsersCreateUserBean}
@@ -30,27 +30,7 @@ class UsersCreateUser extends ApiResponse
      */
     toObject()
     {
-        /**
-         * @type {UsersCreateUserBean}
-         */
-        let data = super.toObject();
-
-        if (data.result)
-        {
-            data.result = this.sanitizeDbObject(data.result);
-            delete data.result.password;
-        }
-
-        return data;
-    }
-
-    /**
-     * @param {UserBean} object
-     * @returns {UserBean}
-     */
-    sanitizeDbObject(object)
-    {
-        return super.sanitizeDbObject(object);
+        return super.toObject();
     }
 }
 

@@ -18,8 +18,6 @@ class UsersRoute extends ApiRoute
      */
     static async createUser(params)
     {
-        params.validate();
-
         let exists = await UserRepository.countDocuments({
             username: params.username
         });

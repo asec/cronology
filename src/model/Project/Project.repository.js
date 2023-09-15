@@ -41,7 +41,7 @@ class ProjectRepository extends EntityRepository
      * @param {mongoose.FilterQuery<ProjectBeanSearch>} [filter]
      * @param {mongoose.ProjectionType<ProjectBeanSearch>|null} [projection]
      * @param {mongoose.QueryOptions<ProjectBeanSearch>|null} [options]
-     * @returns {Project|null}
+     * @returns {Promise<Project|null>}
      */
     static async findOne(filter, projection = null, options = null)
     {

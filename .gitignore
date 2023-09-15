@@ -7,6 +7,8 @@ node_modules
 .env.local
 package-lock.json
 .env.test.local
+.env.console.local
 coverage
 logs
 logs-with-teardown
+app-keys

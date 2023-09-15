@@ -1,5 +1,5 @@
 "use strict";
-require("./config/dotenv").environment("test");
+require("./config/dotenv").environment("dev");
 const { ApiWithExpress } = require("./src/api/ApiWithExpress.class");
 
 ApiWithExpress.init();
