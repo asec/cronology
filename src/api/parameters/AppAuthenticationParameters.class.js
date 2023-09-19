@@ -87,6 +87,13 @@ class AppAuthenticationParameters extends ApiRouteParameters
 
         return true;
     }
+
+    toObject()
+    {
+        let result = super.toObject();
+        result.ip = this.authentication.ip;
+        return result;
+    }
 }
 
 module.exports = {

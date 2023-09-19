@@ -56,6 +56,7 @@ class SetConsoleEnvCommand extends ConsoleCommand
                 return this.#resultInError("[Error] The target file exists but could not be read:" +
                     " '.env.console.local'.");
             }
+            let varsFound = [];
             for (let i = 0; i < content.length; i++)
             {
                 let line = content[i];
@@ -64,9 +65,17 @@ class SetConsoleEnvCommand extends ConsoleCommand
                     if (line.startsWith(varName + "="))
                     {
                         content[i] = this.#getVariableString(varName, newVariables[varName]);
+                        varsFound.push(varName);
                         break;
                     }
                 }
+            }
+            let vars = Object.keys(newVariables);
+            let newVars = vars.filter(varname => varsFound.indexOf(varname) === -1);
+            for (let i = 0; i < newVars.length; i++)
+            {
+                let varName = newVars[i];
+                content.push(this.#getVariableString(varName, newVariables[varName]));
             }
         }
 
@@ -107,7 +116,8 @@ class SetConsoleEnvCommand extends ConsoleCommand
     {
         return {
             APP_ENV: process.env.APP_ENV,
-            CONF_DB_URI: process.env.CONF_DB_URI
+            CONF_DB_URI: process.env.CONF_DB_URI,
+            CONF_CRYPTO_APPKEYS: process.env.CONF_CRYPTO_APPKEYS
         };
     }
 

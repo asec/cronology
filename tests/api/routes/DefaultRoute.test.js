@@ -27,7 +27,7 @@ function checkRoute(route, expectedMethod, expectedRoute, result = null, toThrow
 
 test("getRoutes", () => {
     let routes = DefaultRoute.getRoutes();
-    expect(routes).toHaveLength(2);
+    expect(routes).toHaveLength(3);
 
     checkRoute(
         routes[0],

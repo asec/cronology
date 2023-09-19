@@ -127,15 +127,24 @@ class ExternalApplication extends Entity
         return this.entity.removeIp(ip);
     }
 
+
+    /**
+     * @returns {{private: string, public: string}}
+     */
+    getKeys()
+    {
+        return {
+            private: path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-private.pem"),
+            public: path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-public.pem"),
+        };
+    }
+
     async generateKeys()
     {
         await this.validate("name");
 
         let keyPath = path.resolve(process.env.CONF_CRYPTO_APPKEYS);
-        let fileName = {
-            private: path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-private.pem"),
-            public: path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-public.pem"),
-        };
+        let fileName = this.getKeys();
         if (!fs.existsSync(keyPath))
         {
             fs.mkdirSync(keyPath);
@@ -165,12 +174,28 @@ class ExternalApplication extends Entity
     {
         await this.validate("name");
 
-        let fileName = {
-            private: path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-private.pem"),
-            public: path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-public.pem"),
-        };
+        let fileName = this.getKeys();
 
         return fs.existsSync(fileName.public) && fs.existsSync(fileName.private);
+    }
+
+    deleteKeys()
+    {
+        let fileName = this.getKeys();
+        let dirName = path.resolve(process.env.CONF_CRYPTO_APPKEYS);
+        if (fs.existsSync(fileName.private))
+        {
+            fs.unlinkSync(fileName.private);
+        }
+        if (fs.existsSync(fileName.public))
+        {
+            fs.unlinkSync(fileName.public);
+        }
+
+        if (!fs.readdirSync(dirName).length)
+        {
+            fs.rmdirSync(dirName);
+        }
     }
 
     /**
@@ -184,11 +209,15 @@ class ExternalApplication extends Entity
             throw new Error("Can't generate signature because the app has no valid keys.");
         }
 
-        let fileName = path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-private.pem");
-        let privateKey = fs.readFileSync(fileName);
+        let fileName = this.getKeys();
+        let privateKey = fs.readFileSync(fileName.private);
 
         const now = new Date();
-        const hash = this.#hashObject(object) + ":" + String(Math.floor(now.getTime() / 1000));
+        let hash = this.#hashObject(object);
+        if (Number(process.env.CONF_CRYPTO_SIGNATURE_TIME_THRESHOLD) > 0)
+        {
+            hash += ":" + String(Math.floor(now.getTime() / 1000));
+        }
         const signer = crypto.createSign("rsa-sha256");
         signer.update(hash);
 
@@ -229,26 +258,36 @@ class ExternalApplication extends Entity
             throw new Error("Can't validate signature because the app has no valid keys.");
         }
 
-        let fileName = path.resolve(process.env.CONF_CRYPTO_APPKEYS + this.name + "-public.pem");
-        let publicKey = fs.readFileSync(fileName, "utf8");
+        let fileName = this.getKeys();
+        let publicKey = fs.readFileSync(fileName.public, "utf8");
 
         let timeThreshold = Number(process.env.CONF_CRYPTO_SIGNATURE_TIME_THRESHOLD);
         const now = new Date();
         let timeIdentifier = Math.floor(now.getTime() / 1000);
         let isValid = false;
-        while (timeThreshold > 0)
+        if (timeThreshold <= 0)
         {
-            const hash = this.#hashObject(object) + ":" + String(timeIdentifier);
+            const hash = this.#hashObject(object);
             const verifier = crypto.createVerify("rsa-sha256");
             verifier.update(hash);
             isValid = verifier.verify(publicKey, signature, "base64");
-            if (isValid)
+        }
+        else
+        {
+            while (timeThreshold > 0)
             {
-                break;
-            }
+                const hash = this.#hashObject(object) + ":" + String(timeIdentifier);
+                const verifier = crypto.createVerify("rsa-sha256");
+                verifier.update(hash);
+                isValid = verifier.verify(publicKey, signature, "base64");
+                if (isValid)
+                {
+                    break;
+                }
 
-            timeThreshold--;
-            timeIdentifier--;
+                timeThreshold--;
+                timeIdentifier--;
+            }
         }
 
         return isValid;

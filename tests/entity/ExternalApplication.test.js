@@ -7,9 +7,11 @@ const db = require("../db");
 const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 beforeAll(async () => {
     env.enableSilentLogging();
+    process.env.CONF_CRYPTO_APPKEYS += crypto.randomUUID() + "/";
     await db.connect();
 });
 
@@ -25,7 +27,6 @@ afterEach(async () => {
 /**
  * @param {string} [name]
  * @param {string} [uuid]
- * @param {boolean} [generateUuid = true]
  * @returns {ExternalApplication}
  */
 function createApp(name = undefined, uuid = undefined)
@@ -51,12 +52,12 @@ class TestNonString
     }
 }
 
-function deleteAppKeys()
+/**
+ * @param {ExternalApplication} app
+ */
+function deleteAppKeys(app)
 {
-    fs.rmSync(path.resolve(process.env.CONF_CRYPTO_APPKEYS), {
-        recursive: true,
-        force: true
-    });
+    app.deleteKeys();
 }
 
 test("constructor", () => {
@@ -286,12 +287,9 @@ test("generateKeys", async () => {
     let app = createApp();
     await expect(app.generateKeys()).rejects.toThrow();
 
-    app.name = "test-app";
+    app.name = "test";
     await expect(app.generateKeys()).resolves.not.toThrow();
-    let fileName = {
-        public: path.resolve(process.env.CONF_CRYPTO_APPKEYS + app.name + "-public.pem"),
-        private: path.resolve(process.env.CONF_CRYPTO_APPKEYS + app.name + "-private.pem"),
-    };
+    let fileName = app.getKeys();
 
     expect(fs.existsSync(fileName.public)).toBe(true);
     expect(fs.existsSync(fileName.private)).toBe(true);
@@ -310,17 +308,15 @@ test("generateKeys", async () => {
     expect(privateKey).not.toBe(fs.readFileSync(fileName.private).toString());
 
     let secondApp = createApp("masik-app");
-    let fileNameSecondApp = {
-        public: path.resolve(process.env.CONF_CRYPTO_APPKEYS + secondApp.name + "-public.pem"),
-        private: path.resolve(process.env.CONF_CRYPTO_APPKEYS + secondApp.name + "-private.pem"),
-    };
+    let fileNameSecondApp = secondApp.getKeys();
     await secondApp.generateKeys();
 
     expect(fs.readdirSync(path.resolve(process.env.CONF_CRYPTO_APPKEYS)).length).toBe(4);
     expect(publicKey).not.toBe(fs.readFileSync(fileNameSecondApp.public).toString());
     expect(privateKey).not.toBe(fs.readFileSync(fileNameSecondApp.private).toString());
 
-    deleteAppKeys();
+    deleteAppKeys(app);
+    deleteAppKeys(secondApp);
 });
 
 test("hasValidKeys", async () => {
@@ -329,10 +325,7 @@ test("hasValidKeys", async () => {
     await expect(app.hasValidKeys()).rejects.toThrow();
 
     app.name = "test";
-    let fileName = {
-        public: path.resolve(process.env.CONF_CRYPTO_APPKEYS + app.name + "-public.pem"),
-        private: path.resolve(process.env.CONF_CRYPTO_APPKEYS + app.name + "-private.pem"),
-    };
+    let fileName = app.getKeys();
     expect(await app.hasValidKeys()).toBe(false);
 
     await app.generateKeys();
@@ -347,7 +340,7 @@ test("hasValidKeys", async () => {
     fs.unlinkSync(fileName.private);
     expect(await app.hasValidKeys()).toBe(false);
 
-    deleteAppKeys();
+    deleteAppKeys(app);
 });
 
 test("signatures", async () => {
@@ -368,4 +361,6 @@ test("signatures", async () => {
     expect(await app.validateSignature(signature, data)).toBe(true);
     delete data.ip;
     expect(await app.validateSignature(signature, data)).toBe(false);
+
+    deleteAppKeys(app);
 });

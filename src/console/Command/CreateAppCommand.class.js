@@ -3,6 +3,13 @@ const { ConsoleCommand } = require("../ConsoleCommand.class");
 const { ExternalApplication, ExternalApplicationRepository } = require("../../model/ExternalApplication");
 const { ApiResult, ApiError } = require("../../api/responses");
 const db = require("../../utils/db");
+const path = require("path");
+const fs = require("fs");
+
+/**
+ * @typedef {{}} CreateAppCommandOptions
+ * @property {boolean} force
+ */
 
 class CreateAppCommand extends ConsoleCommand
 {
@@ -16,8 +23,20 @@ class CreateAppCommand extends ConsoleCommand
             " Must start with a letter."
         ]
     ];
+    static options = [
+        [
+            "-f, --force",
+            "Create new keys upon successful app creation even if the files already exists.",
+            false
+        ]
+    ];
 
-    static async action(appName)
+    /**
+     * @param {string} appName
+     * @param {CreateAppCommandOptions} options
+     * @returns {Promise<void>}
+     */
+    static async action(appName, options)
     {
         await db.connect();
         let app = new ExternalApplication({
@@ -27,6 +46,7 @@ class CreateAppCommand extends ConsoleCommand
          * @type {ApiResponse}
          */
         let response;
+        console.log("\nChecking if app exists: '" + appName + "'");
         let existingApp = await ExternalApplicationRepository.findOne({ name: app.name });
         if (existingApp !== null)
         {
@@ -40,7 +60,23 @@ class CreateAppCommand extends ConsoleCommand
         }
         try
         {
+            let keys = app.getKeys();
+            console.log("\nCreating keys:");
+            console.log("\t" + keys.public);
+            console.log("\t" + keys.private);
+            if (!options.force && (fs.existsSync(keys.private) || fs.existsSync(keys.public)))
+            {
+                response = new ApiError({
+                    error: "The keys cannot be generated as the files already exist. You can use the" +
+                        " -f, --force option to overwrite them.",
+                    displayable: true
+                });
+
+                this.printLine(response.toObject());
+                return;
+            }
             await app.generateKeys();
+            console.log("\nSaving app into the database.");
             await app.save();
             response = new ApiResult({
                 success: true,

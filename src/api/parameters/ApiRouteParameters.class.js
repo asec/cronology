@@ -55,7 +55,7 @@ class ApiRouteParameters
      * @returns {Promise<boolean>}
      * @throws {Error}
      */
-    async validate() {}
+    async validate() { throw new Error("Unimplemented method: 'validate'."); }
 
     sanitize()
     {

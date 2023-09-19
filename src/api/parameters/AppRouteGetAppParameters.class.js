@@ -58,13 +58,6 @@ class AppRouteGetAppParameters extends AppAuthenticationParameters
 
         return true;
     }
-
-    toObject()
-    {
-        let result = super.toObject();
-        result.ip = this.authentication.ip;
-        return result;
-    }
 }
 
 module.exports = {
