@@ -2,6 +2,7 @@
 const { ApiRouteParameters } = require("./ApiRouteParameters.class");
 const { DisplayableApiException } = require("../../exception/DisplayableApiException.class");
 const { ExternalApplicationRepository } = require("../../model/ExternalApplication");
+const express = require("express");
 
 /**
  * @typedef {{}} AppAuthenticationBean
@@ -37,7 +38,7 @@ class AppAuthenticationParameters extends ApiRouteParameters
     }
 
     /**
-     * @returns {typeof AppAuthenticationParameters}
+     * @returns {AppAuthenticationParameters}
      */
     static parse(req)
     {
@@ -47,8 +48,17 @@ class AppAuthenticationParameters extends ApiRouteParameters
             appUuid: req.header("crnlg-app"),
             signature: req.header("crnlg-signature")
         });
+        this.parseOwn(req, result);
         return result;
     }
+
+    /**
+     * @abstract
+     * @protected
+     * @param {express.Request} req
+     * @param {AppAuthenticationParameters} result
+     */
+    static parseOwn(req, result) {}
 
     /**
      * @returns {Promise<boolean>}
@@ -85,8 +95,15 @@ class AppAuthenticationParameters extends ApiRouteParameters
             throw new DisplayableApiException("You do not have the permission to make this request.");
         }
 
-        return true;
+        return this.validateOwn();
     }
+
+    /**
+     * @abstract
+     * @protected
+     * @returns {boolean}
+     */
+    validateOwn() { return true; }
 
     toObject()
     {

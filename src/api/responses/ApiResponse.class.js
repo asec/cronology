@@ -84,7 +84,11 @@ class ApiResponse
     sanitizeDbObject(object)
     {
         let result = {...object};
-        result.id = String(object._id);
+        let keys = Object.keys(result);
+        if (keys.indexOf("_id") > -1)
+        {
+            result.id = String(object._id);
+        }
         delete result._id;
         delete result.__v;
 

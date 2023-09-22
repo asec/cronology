@@ -40,23 +40,32 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
     /**
      * @returns {UsersRouteCreateParameters}
      */
-    static parse(request)
+    static parse(req)
+    {
+        return super.parse(req);
+    }
+
+    /**
+     * @protected
+     * @returns {UsersRouteCreateParameters}
+     */
+    static parseOwn(request, r)
     {
         /**
          * @type {UsersRouteCreateParameters}
          */
-        let result = super.parse(request);
+        let result = r;
         result.setAll(request.body);
         return result;
     }
 
     /**
-     * @returns {Promise<boolean>}
+     * @protected
+     * @returns {boolean}
      * @throws {DisplayableApiException}
      */
-    async validate()
+    validateOwn()
     {
-        await super.validate();
         let usernameRegex = /^[a-zA-Z0-9_\-]{5,}$/;
         let errors = {
             username: "Invalid parameter: 'username'. Must be at least 5 characters long," +

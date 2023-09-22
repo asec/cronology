@@ -43,7 +43,7 @@ class ApiRoute
     /**
      * @param {MethodValueSet} method
      * @param {string} route
-     * @param {function(params?: ApiRouteParameters): ApiResponse} action
+     * @param {function(params?: ApiRouteParameters): (ApiResponse|Promise<ApiResponse>)} action
      * @param {typeof ApiRouteParameters} [parameterClass]
      */
     static addRoute(method, route, action, parameterClass = undefined)

@@ -21,7 +21,8 @@ const logSchema = new mongoose.Schema({
 	data: Object
 }, {
 	timestamps: {
-		createdAt: "created"
+		createdAt: "created",
+		updatedAt: false
 	},
 	statics: {
 		logFile: "",

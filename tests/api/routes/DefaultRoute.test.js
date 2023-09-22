@@ -8,14 +8,16 @@ const { ApiResponse } = require("../../../src/api/responses/ApiResponse.class");
  * @param {ApiRouteDescriptor} route
  * @param {string} expectedMethod
  * @param {string} expectedRoute
- * @param {ApiResponse} [result = null]
- * @param {typeof Error} [toThrow = null]
+ * @param {ApiResponse} [result = undefined]
+ * @param {typeof Error} [toThrow = undefined]
  */
-function checkRoute(route, expectedMethod, expectedRoute, result = null, toThrow = null)
+function checkRoute(route, expectedMethod, expectedRoute, result = undefined, toThrow = undefined)
 {
     expect(route.method).toBe(expectedMethod);
     expect(route.route).toBe(expectedRoute);
-    if (toThrow !== null)
+    expect(Object.keys(route).indexOf("parameterClass")).toBeGreaterThan(-1);
+    expect(route.parameterClass).toBe(undefined);
+    if (toThrow !== undefined)
     {
         expect(() => route.action()).toThrow(toThrow);
     }
@@ -40,8 +42,15 @@ test("getRoutes", () => {
         routes[1],
         "get",
         "/test-error",
-        null,
+        undefined,
         Error
+    );
+
+    checkRoute(
+        routes[2],
+        "get",
+        "/bad-response",
+        undefined
     );
 
     const env = process.env.APP_ENV;
@@ -56,6 +65,21 @@ test("getRoutes", () => {
         "/",
         new ApiResponse({ success: true })
     );
+
+    expect(() => checkRoute(
+        routes[1],
+        "get",
+        "/test-error",
+        null,
+        Error
+    )).toThrow(Error);
+
+    expect(() => checkRoute(
+        routes[2],
+        "get",
+        "/bad-response",
+        undefined
+    )).toThrow(Error);
 
     process.env.APP_ENV = env;
 });
