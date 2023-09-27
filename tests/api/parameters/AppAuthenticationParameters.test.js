@@ -147,4 +147,13 @@ test("validate", async () => {
     params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
     await expect(params.validate()).rejects.toThrow(DisplayableApiException);
+
+    req = mockRequest.createAuthenticationRequest("192.168.0.0", app.uuid, await app.generateSignature({ip: "192.168.0.0"}));
+    params = AppAuthenticationParameters.parse(req);
+    expect(params).toBeInstanceOf(AppAuthenticationParameters);
+    await expect(params.validate()).rejects.toThrow(DisplayableApiException);
+
+    app.addIp("192.168.0.0");
+    await app.save();
+    expect(await params.validate()).toBe(true);
 });
