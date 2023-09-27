@@ -26,7 +26,24 @@ class ConsoleCommand
     {
         process.stdin.setRawMode(true);
         let buffer = Buffer.alloc(1);
-        fs.readSync(0, buffer, 0, 1);
+        let read = 0;
+        do
+        {
+            try
+            {
+                read = fs.readSync(0, buffer, 0, 1);
+            }
+            catch (e)
+            {
+                if (e.code === "EAGAIN")
+                {
+                    continue;
+                }
+                throw e;
+            }
+
+        }
+        while (read <= 0);
         return buffer.toString("utf8");
     }
 
