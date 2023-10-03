@@ -285,7 +285,6 @@ test("generate: forward", () => {
     cronTiming = "0 */6 31 9 *";
     now = new Date("2023-09-01T00:00:00.000Z");
     schedule = new CronScheduler(cronTiming, new Date(now));
-    console.log(schedule.isValid());
     expect(schedule.isValid()).toBe(false);
 });
 

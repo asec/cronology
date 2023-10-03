@@ -90,7 +90,7 @@ class AppAuthenticationParameters extends ApiRouteParameters
         {
             throw new DisplayableApiException("You do not have the permission to make this request.");
         }
-        if (!await app.validateSignature(this.authentication.signature, this.toObject()))
+        if (!await app.validateSignature(this.authentication.signature, this))
         {
             throw new DisplayableApiException("You do not have the permission to make this request.");
         }

@@ -199,46 +199,41 @@ class DateBuilder
 
     checkMonthDayValidity()
     {
-        if (this.#day.empty())
+        let isValid = false;
+        const validationProps = {
+            month: ValueSet.copy(this.#month),
+            day: ValueSet.copy(this.#day)
+        };
+        let startDate = new Date(this.#date);
+        validationProps.month.first();
+        startDate.setUTCMonth(validationProps.month.current() - 1);
+        startDate.setUTCDate(1);
+        startDate.setUTCHours(0, 0, 0, 0);
+        let maxDate = new Date(startDate);
+        maxDate.setUTCFullYear(maxDate.getUTCFullYear() + 5);
+
+        validationProps.month.on("overflow", () => {
+            startDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
+        });
+
+        while (startDate <= maxDate)
         {
-            let isValid = false;
-            const validationProps = {
-                month: ValueSet.copy(this.#month),
-                day: ValueSet.copy(this.#day)
-            };
-            let startDate = new Date(this.#date);
-            validationProps.month.first();
-            startDate.setUTCMonth(validationProps.month.current() - 1);
-            startDate.setUTCDate(1);
-            startDate.setUTCHours(0, 0, 0, 0);
-            let maxDate = new Date(startDate);
-            maxDate.setUTCFullYear(maxDate.getUTCFullYear() + 5);
+            this.#regenerateDaysInMonth(
+                startDate.getUTCFullYear(),
+                validationProps.month.current(),
+                validationProps.day
+            );
 
-            validationProps.month.on("overflow", () => {
-                startDate.setUTCFullYear(startDate.getUTCFullYear() + 1);
-            });
-
-            while (startDate <= maxDate)
-            {
-                this.#regenerateDaysInMonth(
-                    startDate.getUTCFullYear(),
-                    validationProps.month.current(),
-                    validationProps.day
-                );
-
-                if (!validationProps.day.empty()) {
-                    isValid = true;
-                    break;
-                }
-
-                validationProps.month.next();
-                startDate.setUTCMonth(validationProps.month.current() - 1);
+            if (!validationProps.day.empty()) {
+                isValid = true;
+                break;
             }
 
-            return isValid;
+            validationProps.month.next();
+            startDate.setUTCMonth(validationProps.month.current() - 1);
         }
 
-        return true;
+        return isValid;
     }
 
     /**

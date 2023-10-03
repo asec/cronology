@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const profiler = require("../../src/utils/profiler");
 
 beforeAll(async () => {
     env.enableSilentLogging();
@@ -150,8 +151,10 @@ test("ip", () => {
     }
     expect(app.ip).toStrictEqual([]);
 
-    app.addIp("127.0.0.1");
-    app.addIp("198.162.2.1");
+    expect(app.addIp("127.0.0.1")).toBe(true);
+    expect(app.addIp("198.162.2.1")).toBe(true);
+    expect(app.ip).toStrictEqual(["127.0.0.1", "198.162.2.1"]);
+    expect(app.addIp("198.162.2.1")).toBe(false);
     expect(app.ip).toStrictEqual(["127.0.0.1", "198.162.2.1"]);
     expect(app.hasIp("127.0.0.1")).toBe(true);
     expect(app.hasIp("156.145.85.10")).toBe(false);
@@ -164,6 +167,23 @@ test("ip", () => {
     expect(app.ip).toStrictEqual([]);
     expect(app.removeIp("198.162.2.1")).toBe(false);
     expect(app.ip).toStrictEqual([]);
+
+    const ExternalApplicationModel = require("../../src/model/ExternalApplication/ExternalApplication.model");
+    let appModel = new ExternalApplicationModel({
+        name: "test-new",
+        uuid: "test"
+    });
+    expect(appModel.name).toBe("test-new");
+    expect(appModel.uuid).toBe("test");
+    expect(appModel.ip).toStrictEqual([]);
+    expect(appModel._id).not.toBeNull();
+    expect(appModel.validateSync()).toBeUndefined();
+
+    appModel.ip = new TestNonString();
+    expect(appModel.validateSync()).toBeInstanceOf(Error);
+
+    appModel.ip = "127";
+    expect(appModel.validateSync()).toBeInstanceOf(Error);
 });
 
 test("validate", async () => {
@@ -345,6 +365,8 @@ test("hasValidKeys", async () => {
 
 test("signatures", async () => {
 
+    const { AppRouteGetAppParameters } = require("../../src/api/parameters/AppRouteGetAppParameters.class");
+
     let app = createApp("test");
     await app.generateKeys();
 
@@ -354,6 +376,9 @@ test("signatures", async () => {
         ip: "127.0.0.1",
     };
 
+    const defaultTimeThreshold = process.env.CONF_CRYPTO_SIGNATURE_TIME_THRESHOLD;
+    process.env.CONF_CRYPTO_SIGNATURE_TIME_THRESHOLD = 0;
+
     let signature = await app.generateSignature(data);
     expect(typeof signature).toBe("string");
     expect(signature.length).toBeGreaterThan(10);
@@ -361,6 +386,47 @@ test("signatures", async () => {
     expect(await app.validateSignature(signature, data)).toBe(true);
     delete data.ip;
     expect(await app.validateSignature(signature, data)).toBe(false);
+
+    data.ip = "127.0.0.1";
+    let timeLimit = 2;
+    process.env.CONF_CRYPTO_SIGNATURE_TIME_THRESHOLD = timeLimit;
+    expect(await app.validateSignature(signature, data)).toBe(false);
+
+    let timedSignature = await app.generateSignature(data);
+    expect(timedSignature).not.toBe(signature);
+    expect(await app.validateSignature(timedSignature, data)).toBe(true);
+
+    profiler.start();
+    while (await app.validateSignature(timedSignature, data))
+    {
+        profiler.mark();
+        await new Promise(resolve => setTimeout(() => resolve(true), 100));
+    }
+
+    expect(profiler.get(true)).toBeLessThan((timeLimit + 1) * 1000 + 100);
+    expect(await app.validateSignature(timedSignature, data)).toBe(false);
+
+    process.env.CONF_CRYPTO_SIGNATURE_TIME_THRESHOLD = 0;
+    signature = await app.generateSignature(data);
+    expect(await app.validateSignature(signature, data)).toBe(true);
+
+    app.deleteKeys();
+    await expect(app.generateSignature(data)).rejects.toThrow()
+    await expect(app.validateSignature(signature, data)).rejects.toThrow();
+
+    await app.generateKeys();
+
+    let params = new AppRouteGetAppParameters({
+        uuid: "test"
+    });
+    params.setAuthentication({
+        ip: "::1",
+        appUuid: "test",
+        signature: ""
+    });
+    signature = await app.generateSignature(params);
+    expect(await app.validateSignature(signature, params));
+    expect(await app.validateSignature(signature, params.toObject()));
 
     deleteAppKeys(app);
 });

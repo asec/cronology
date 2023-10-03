@@ -18,10 +18,6 @@ const externalApplicationSchema = new mongoose.Schema({
         type: [String],
         validate: {
             validator: value => {
-                if (!Array.isArray(value))
-                {
-                    return false;
-                }
 
                 let valid = true;
                 for (let i = 0; i < value.length; i++)

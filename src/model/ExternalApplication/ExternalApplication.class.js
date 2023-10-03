@@ -127,7 +127,6 @@ class ExternalApplication extends Entity
         return this.entity.removeIp(ip);
     }
 
-
     /**
      * @returns {{private: string, public: string}}
      */
@@ -192,7 +191,7 @@ class ExternalApplication extends Entity
             fs.unlinkSync(fileName.public);
         }
 
-        if (!fs.readdirSync(dirName).length)
+        if (fs.existsSync(dirName) && !fs.readdirSync(dirName).length)
         {
             fs.rmdirSync(dirName);
         }
@@ -231,7 +230,7 @@ class ExternalApplication extends Entity
     #hashObject(object)
     {
         let string = "";
-        if (object.hasOwnProperty("toObject") && typeof object.toObject === "function")
+        if ("toObject" in object && typeof object.toObject === "function")
         {
             string = JSON.stringify(object.toObject());
         }
@@ -274,7 +273,7 @@ class ExternalApplication extends Entity
         }
         else
         {
-            while (timeThreshold > 0)
+            while (timeThreshold >= 0)
             {
                 const hash = this.#hashObject(object) + ":" + String(timeIdentifier);
                 const verifier = crypto.createVerify("rsa-sha256");
