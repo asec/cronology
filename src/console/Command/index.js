@@ -4,17 +4,19 @@ const { CreateUserCommand } = require("./CreateUserCommand.class");
 const { CreateAdminCommand } = require("./CreateAdminCommand.class");
 const { SetAdminCommand } = require("./SetAdminCommand.class");
 const { CreateAppCommand } = require("./CreateAppCommand.class");
-const { SetConsoleEnvCommand } = require("./SetConsoleEnvCommand.class");
+const { ConsoleEnvSetCommand } = require("./ConsoleEnvSetCommand.class");
+const { ConsoleEnvGetCommand } = require("./ConsoleEnvGetCommand.class");
 const { AppIpCommand } = require("./AppIpCommand.class");
 const { AppSignatureCommand } = require("./AppSignatureCommand.class");
 
 module.exports = {
     AppIpCommand,
     AppSignatureCommand,
+    ConsoleEnvGetCommand,
+    ConsoleEnvSetCommand,
     CreateAdminCommand,
     CreateAppCommand,
     CreateUserCommand,
     ScheduleCommand,
     SetAdminCommand,
-    SetConsoleEnvCommand,
 };

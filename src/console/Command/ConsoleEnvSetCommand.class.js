@@ -6,9 +6,9 @@ const { ApiError, ApiResponse } = require("../../api/responses");
 
 const defaultEnvironmentVariables = {...process.env};
 
-class SetConsoleEnvCommand extends ConsoleCommand
+class ConsoleEnvSetCommand extends ConsoleCommand
 {
-    static name = "set-console-env";
+    static name = "console-env-set";
     static description = "Sets the console environment to either 'test', 'dev' or 'prod'. This affects" +
         "(among other things possibly) which db it will use.";
     static args = [
@@ -145,5 +145,5 @@ class SetConsoleEnvCommand extends ConsoleCommand
 }
 
 module.exports = {
-    SetConsoleEnvCommand
+    ConsoleEnvSetCommand
 };

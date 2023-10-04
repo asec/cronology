@@ -19,6 +19,7 @@
   },
   "scripts": {
     "start": "nodemon api.js",
+    "start-test": "nodemon api.js --test",
     "test": "jest"
   },
   "author": "Roland Zsámboki",
