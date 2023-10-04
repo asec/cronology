@@ -3,7 +3,9 @@ require("../../../config/dotenv").environment("test");
 const { test, expect } = require("@jest/globals");
 const { DefaultRoute } = require("../../../src/api/routes");
 const { ApiResponse, PingResponse } = require("../../../src/api/responses");
+const { ApiRouteParameters } = require("../../../src/api/parameters/ApiRouteParameters.class");
 const packageInfo = require("../../../package.json");
+const {UsersRouteCreateParameters} = require("../../../src/api/parameters/UsersRouteCreateParameters.class");
 
 /**
  * @param {ApiRouteDescriptor} route
@@ -28,10 +30,28 @@ function checkRoute(route, expectedMethod, expectedRoute, result = undefined, to
     }
 }
 
+/**
+ * @param {ApiRouteDescriptor} routeData
+ * @param {string} method
+ * @param {string} route
+ * @param {typeof ApiRouteParameters} [parameterClass]
+ */
+function checkRouteFormat(routeData, method, route, parameterClass = undefined)
+{
+    expect(routeData.method).toBe(method);
+    expect(routeData.route).toBe(route);
+    expect(typeof routeData.action).toBe("function");
+    if (parameterClass)
+    {
+        expect(routeData.parameterClass.isClassExtendedFrom(ApiRouteParameters)).toBe(true);
+        expect(routeData.parameterClass).toBe(parameterClass);
+    }
+}
+
 test("getRoutes", () => {
     const packageInfo = require("../../../package.json");
     let routes = DefaultRoute.getRoutes();
-    expect(routes).toHaveLength(3);
+    expect(routes).toHaveLength(4);
 
     checkRoute(
         routes[0],
@@ -53,6 +73,12 @@ test("getRoutes", () => {
         "get",
         "/bad-response",
         undefined
+    );
+
+    checkRouteFormat(
+        routes[3],
+        "delete",
+        "/"
     );
 
     const env = process.env.APP_ENV;

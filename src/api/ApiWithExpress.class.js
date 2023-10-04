@@ -52,6 +52,9 @@ class ApiWithExpress
                     case "put":
                         this.#app.put(cRoute.route, this.#createAction(method, cRoute.route, cRoute.parameterClass));
                         break;
+                    case "delete":
+                        this.#app.delete(cRoute.route, this.#createAction(method, cRoute.route, cRoute.parameterClass));
+                        break;
                 }
             });
         }

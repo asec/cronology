@@ -3,8 +3,8 @@ const env = require("../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const db = require("../db");
 const { Api } = require("../../src/api/Api.class");
-const { ApiError, ApiResult, PingResponse } = require("../../src/api/responses");
-const { Log } = require("../../src/model/Log");
+const { ApiError, ApiResult, PingResponse, ApiResponse } = require("../../src/api/responses");
+const { Log, LogRepository } = require("../../src/model/Log");
 
 beforeAll(async () => {
     env.enableSilentLogging();
@@ -14,6 +14,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+    if (db.getReadyState() !== 1)
+    {
+        await db.connect();
+    }
     await db.tearDown();
 });
 
@@ -26,7 +30,7 @@ test("getRoutes", () => {
     expect(routes.get).toHaveLength(4);
     expect(routes.post).toHaveLength(0);
     expect(routes.put).toHaveLength(1);
-    expect(routes.delete).toHaveLength(0);
+    expect(routes.delete).toHaveLength(1);
 });
 
 test("execute: DefaultRoute", async () => {
@@ -51,6 +55,12 @@ test("execute: DefaultRoute", async () => {
 
     response = await Api.execute("get", "/bad-response");
     expect(response).toBeInstanceOf(ApiError);
+
+    expect(await LogRepository.countDocuments()).toBeGreaterThanOrEqual(4);
+    response = await Api.execute("delete", "/");
+    expect(response).toBeInstanceOf(ApiResponse);
+    expect(response.toObject()).toStrictEqual({ success: true });
+    expect(await LogRepository.countDocuments()).toBe(0);
 });
 
 test("execute: AppRoute::getAppByUuid", async () => {

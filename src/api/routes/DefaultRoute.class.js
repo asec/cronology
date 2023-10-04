@@ -12,6 +12,7 @@ class DefaultRoute extends ApiRoute
         {
             this.addRoute("get", "/test-error", this.testError);
             this.addRoute("get", "/bad-response", this.badResponse);
+            this.addRoute("delete", "/", this.truncate);
         }
     }
 
@@ -40,6 +41,17 @@ class DefaultRoute extends ApiRoute
     static badResponse()
     {
 
+    }
+
+    static async truncate()
+    {
+        const db = require("../../utils/db");
+
+        await db.truncate();
+
+        return new ApiResponse({
+            success: true
+        });
     }
 }
 

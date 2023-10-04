@@ -93,6 +93,29 @@ class Db
         return true;
     }
 
+    async truncate()
+    {
+        await this.waitForBackgroundProcesses();
+        const exceptFor = ["applications"];
+        for (let collection in this.db.collections)
+        {
+            if (exceptFor.indexOf(collection) > -1)
+            {
+                continue;
+            }
+            try
+            {
+                await this.db.collections[collection].deleteMany();
+            }
+            catch (e)
+            {
+                throw new Error("Could not empty collection: '" + collection + "'");
+            }
+        }
+
+        return true;
+    }
+
     getReadyState()
     {
         return this.db.readyState;
