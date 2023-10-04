@@ -3,7 +3,7 @@ const env = require("../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const db = require("../db");
 const { Api } = require("../../src/api/Api.class");
-const { ApiError, ApiResult } = require("../../src/api/responses");
+const { ApiError, ApiResult, PingResponse} = require("../../src/api/responses");
 const { Log } = require("../../src/model/Log");
 
 beforeAll(async () => {
@@ -30,8 +30,18 @@ test("getRoutes", () => {
 });
 
 test("execute: DefaultRoute", async () => {
+    const packageInfo = require("../../package.json");
     let response = await Api.execute("get", "/");
-    expect(response.toObject()).toStrictEqual({ success: true });
+    /**
+     * @type {PingResponseBean}
+     */
+    let responseData = response.toObject();
+    expect(response).toBeInstanceOf(PingResponse);
+    expect(responseData).toHaveProperty("success");
+    expect(responseData).toHaveProperty("version");
+    expect(responseData.success).toBe(true);
+    expect(responseData.version).toMatch("test");
+    expect(responseData.version).toMatch(packageInfo.version);
 
     response = await Api.execute("get", "/test-error");
     expect(response).toBeInstanceOf(ApiError);

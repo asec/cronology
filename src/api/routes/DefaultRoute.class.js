@@ -1,12 +1,12 @@
 "use strict";
 const { ApiRoute } = require("../ApiRoute.class");
-const { ApiResponse } = require("../responses/ApiResponse.class");
+const { ApiResponse, PingResponse } = require("../responses");
 
 class DefaultRoute extends ApiRoute
 {
     static getRoutesContent()
     {
-        this.addRoute("get", "/", this.action);
+        this.addRoute("get", "/", this.ping);
 
         if (process.env.APP_ENV === "test")
         {
@@ -16,12 +16,19 @@ class DefaultRoute extends ApiRoute
     }
 
     /**
-     * @returns {ApiResponse}
+     * @returns {PingResponse}
      */
-    static action()
+    static ping()
     {
-        return new ApiResponse({
-            success: true
+        const packageInfo = require("../../../package.json");
+        let version = packageInfo.version;
+        if (process.env.APP_ENV !== "prod")
+        {
+            version += " (" + process.env.APP_ENV + ")";
+        }
+        return new PingResponse({
+            success: true,
+            version
         });
     }
 

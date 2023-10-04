@@ -1,10 +1,11 @@
 "use strict";
 const { program } = require("commander");
+const packageInfo = require("./package.json");
 
 program
     .name("api")
     .description("Runs the REST API server.")
-    .version("1.0.0", "-v, --version")
+    .version(packageInfo.version, "-v, --version")
     .option("--test", "Starts the server in test environment. This is useful for integration tests (ie." +
         " for the PHP app). This will use the test database and makes the test endpoints available for use.")
 ;

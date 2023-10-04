@@ -8,10 +8,12 @@ const { ConsoleCommand } = require("./src/console/ConsoleCommand.class");
  */
 const commands = require("./src/console/Command");
 
+const packageInfo = require("./package.json");
+
 program
     .name("console")
     .description("Local console for the cronology api.")
-    .version("1.0.0", '-v, --version')
+    .version(packageInfo.version, '-v, --version')
 ;
 
 for (let className in commands)

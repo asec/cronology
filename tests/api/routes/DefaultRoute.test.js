@@ -2,7 +2,8 @@
 require("../../../config/dotenv").environment("test");
 const { test, expect } = require("@jest/globals");
 const { DefaultRoute } = require("../../../src/api/routes");
-const { ApiResponse } = require("../../../src/api/responses/ApiResponse.class");
+const { ApiResponse, PingResponse } = require("../../../src/api/responses");
+const packageInfo = require("../../../package.json");
 
 /**
  * @param {ApiRouteDescriptor} route
@@ -28,6 +29,7 @@ function checkRoute(route, expectedMethod, expectedRoute, result = undefined, to
 }
 
 test("getRoutes", () => {
+    const packageInfo = require("../../../package.json");
     let routes = DefaultRoute.getRoutes();
     expect(routes).toHaveLength(3);
 
@@ -35,7 +37,7 @@ test("getRoutes", () => {
         routes[0],
         "get",
         "/",
-        new ApiResponse({ success: true })
+        new PingResponse({ success: true, version: packageInfo.version + " (test)" })
     );
 
     checkRoute(
@@ -63,7 +65,7 @@ test("getRoutes", () => {
         routes[0],
         "get",
         "/",
-        new ApiResponse({ success: true })
+        new PingResponse({ success: true, version: packageInfo.version + " (dev)" })
     );
 
     expect(() => checkRoute(
@@ -80,6 +82,14 @@ test("getRoutes", () => {
         "/bad-response",
         undefined
     )).toThrow(Error);
+
+    process.env.APP_ENV = "prod";
+    checkRoute(
+        routes[0],
+        "get",
+        "/",
+        new PingResponse({ success: true, version: packageInfo.version })
+    );
 
     process.env.APP_ENV = env;
 });
