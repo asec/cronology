@@ -1,7 +1,7 @@
 "use strict";
 const env = require("../../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
-const { UsersCreateUser } = require("../../../src/api/responses/UsersCreateUser.class");
+const { UsersCreateUserResult } = require("../../../src/api/responses/UsersCreateUserResult.class");
 const { User } = require("../../../src/model/User");
 const db = require("../../db");
 
@@ -19,10 +19,10 @@ afterAll(async () => {
 });
 
 test("constructor", async () => {
-    let result= new UsersCreateUser({});
+    let result= new UsersCreateUserResult({});
     expect(result.toObject()).toStrictEqual({ success: false, result: null });
 
-    result = new UsersCreateUser({
+    result = new UsersCreateUserResult({
         success: true
     });
     expect(result.toObject()).toStrictEqual({ success: true, result: null });
@@ -38,7 +38,7 @@ test("constructor", async () => {
         accessTokenValid: "c",
         accessToken: "d"
     };
-    result = new UsersCreateUser({
+    result = new UsersCreateUserResult({
         success: true,
         result: userBean
     });
@@ -64,7 +64,7 @@ test("constructor", async () => {
         accessTokenValid: now,
         loginDate: now
     });
-    result = new UsersCreateUser({
+    result = new UsersCreateUserResult({
         success: true,
         result: user.toObject()
     });
@@ -83,7 +83,7 @@ test("constructor", async () => {
     await db.connect();
     await user.save();
 
-    result = new UsersCreateUser({
+    result = new UsersCreateUserResult({
         success: true,
         result: user.toObject()
     });

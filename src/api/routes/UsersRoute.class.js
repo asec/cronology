@@ -2,7 +2,7 @@
 const { ApiRoute } = require("../ApiRoute.class");
 const { UsersRouteCreateParameters } = require("../parameters/UsersRouteCreateParameters.class");
 const { User, UserRepository } = require("../../model/User");
-const { UsersCreateUser } = require("../responses");
+const { UsersCreateUserResult } = require("../responses");
 const { DisplayableApiException } = require("../../exception");
 
 class UsersRoute extends ApiRoute
@@ -34,7 +34,7 @@ class UsersRoute extends ApiRoute
 
         await user.save();
 
-        return new UsersCreateUser({
+        return new UsersCreateUserResult({
             success: true,
             result: user.toObject()
         });

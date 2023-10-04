@@ -2,14 +2,14 @@
 const { ApiResult } = require("./ApiResult.class");
 
 /**
- * @typedef {ApiResultBean} UsersCreateUserBean
+ * @typedef {ApiResultBean} UsersCreateUserResultBean
  * @property {UserBean} [result]
  */
 
-class UsersCreateUser extends ApiResult
+class UsersCreateUserResult extends ApiResult
 {
     /**
-     * @type {UsersCreateUserBean}
+     * @type {UsersCreateUserResultBean}
      */
     data = {
         success: false,
@@ -17,7 +17,7 @@ class UsersCreateUser extends ApiResult
     };
 
     /**
-     * @param {UsersCreateUserBean} values
+     * @param {UsersCreateUserResultBean} values
      */
     constructor(values)
     {
@@ -26,7 +26,7 @@ class UsersCreateUser extends ApiResult
     }
 
     /**
-     * @returns {UsersCreateUserBean}
+     * @returns {UsersCreateUserResultBean}
      */
     toObject()
     {
@@ -35,5 +35,5 @@ class UsersCreateUser extends ApiResult
 }
 
 module.exports = {
-    UsersCreateUser
+    UsersCreateUserResult
 };

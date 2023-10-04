@@ -3,7 +3,7 @@ const env = require("../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const db = require("../db");
 const { Api } = require("../../src/api/Api.class");
-const { ApiError, ApiResult, PingResponse} = require("../../src/api/responses");
+const { ApiError, ApiResult, PingResponse } = require("../../src/api/responses");
 const { Log } = require("../../src/model/Log");
 
 beforeAll(async () => {
@@ -160,7 +160,7 @@ test("execute: AppRoute::getAppByUuid", async () => {
 
 test("execute: UsersRoute::createUser", async () => {
     const { UsersRouteCreateParameters } = require("../../src/api/parameters/UsersRouteCreateParameters.class");
-    const { UsersCreateUser } = require("../../src/api/responses");
+    const { UsersCreateUserResult } = require("../../src/api/responses");
     let params = new UsersRouteCreateParameters({
         username: 12
     });
@@ -192,10 +192,10 @@ test("execute: UsersRoute::createUser", async () => {
     {
         let response = await Api.execute("put", "/user", params);
         /**
-         * @type {UsersCreateUserBean}
+         * @type {UsersCreateUserResultBean}
          */
         let responseObject = response.toObject();
-        expect(response).toBeInstanceOf(UsersCreateUser);
+        expect(response).toBeInstanceOf(UsersCreateUserResult);
         expect(responseObject.success).toBe(true);
         expect(responseObject.result).toStrictEqual(response.toObject().result);
         expect(responseObject.result._id).toBeUndefined();
