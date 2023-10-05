@@ -176,6 +176,14 @@ class User extends Entity
 	{
 		return UserModel.generateRandomPassword(length);
 	}
+
+	/**
+	 * @returns {string}
+	 */
+	static generateAccessToken()
+	{
+		return UserModel.generateAccessToken();
+	}
 }
 
 module.exports = {

@@ -2,6 +2,7 @@
 const { AppAuthenticationParameters } = require("./AppAuthenticationParameters.class");
 const validator = require("validator");
 const { DisplayableApiException } = require("../../exception");
+const { User } = require("../../model/User");
 
 /**
  * @typedef {ApiRouteParameterBean} UsersRouteCreateParametersBean
@@ -18,7 +19,7 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
     /**
      * @type {string}
      */
-    password = "";
+    password;
 
     /**
      * @param {UsersRouteCreateParametersBean} params
@@ -82,10 +83,15 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
             throw new DisplayableApiException(errors.username);
         }
 
-        if (typeof this.password !== "string")
+        if (!this.password || typeof this.password !== "string")
+        {
+            this.set("password", User.generateRandomPassword());
+        }
+
+        /*if (typeof this.password !== "string")
         {
             throw new DisplayableApiException(errors.password);
-        }
+        }*/
         if (!validator.isStrongPassword(this.password, { minLength: 12 }))
         {
             throw new DisplayableApiException(errors.password);

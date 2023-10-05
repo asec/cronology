@@ -1,5 +1,5 @@
 "use strict";
-require("../../config/dotenv").environment("test");
+const env = require("../../config/dotenv").environment("test");
 const { beforeAll, afterAll, test, afterEach, expect} = require("@jest/globals");
 
 const { User, UserRepository } = require("../../src/model/User");
@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const db = require("../db");
 
 beforeAll(async () => {
+    env.enableSilentLogging();
     await db.connect();
 });
 
@@ -109,6 +110,17 @@ test("Passwords", async () => {
 
     user.plainPassword = 10;
     await expect(user.validate()).rejects.toThrow(mongoose.Error.ValidationError);
+});
+
+test("AccessToken generator", () => {
+    let testSize = 10000;
+    for (let i = 0; i < testSize; i++)
+    {
+        let accessToken = User.generateAccessToken();
+        expect(typeof accessToken).toBe("string");
+        expect(accessToken.length).toBeGreaterThanOrEqual(40);
+        expect(accessToken.length).toBeLessThanOrEqual(79);
+    }
 });
 
 test("Create (OK)", async () => {

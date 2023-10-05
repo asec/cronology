@@ -112,7 +112,18 @@ const userSchema = new mongoose.Schema({
          * @param {number} length
          * @returns {string}
          */
-        generateRandomPassword
+        generateRandomPassword,
+        /**
+         * @memberOf UserModel
+         * @returns {string}
+         */
+        generateAccessToken: function ()
+        {
+            let length = crypto.randomInt(30, 60);
+            let buffer = crypto.randomBytes(length);
+
+            return buffer.toString("base64url");
+        }
     },
     methods: {
         /**

@@ -213,6 +213,8 @@ test("execute: UsersRoute::createUser", async () => {
         expect(responseObject.result.id).not.toBeUndefined();
         expect(responseObject.result.password).toBeUndefined();
         expect(responseObject.result.username).toBe(params.username);
+        expect(responseObject.result.accessToken).not.toBeUndefined();
+        expect(typeof responseObject.result.accessToken).toBe("string");
     }
 
     await executeAndExpectError(undefined);

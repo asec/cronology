@@ -109,6 +109,13 @@ test("getRoutes", () => {
         undefined
     )).toThrow(Error);
 
+    expect(() => checkRoute(
+        routes[3],
+        "delete",
+        "/",
+        undefined
+    )).toThrow(Error);
+
     process.env.APP_ENV = "prod";
     checkRoute(
         routes[0],
@@ -116,6 +123,13 @@ test("getRoutes", () => {
         "/",
         new PingResponse({ success: true, version: packageInfo.version })
     );
+
+    expect(() => checkRoute(
+        routes[3],
+        "delete",
+        "/",
+        undefined
+    )).toThrow(Error);
 
     process.env.APP_ENV = env;
 });

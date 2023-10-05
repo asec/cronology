@@ -73,13 +73,13 @@ async function parseParamsFromMockRequest(username, password, ip = null, uuid = 
 test("constructor", () => {
     let params = new UsersRouteCreateParameters({});
     expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ username: "", password: "", ip: undefined });
+    expect(params.toObject()).toStrictEqual({ username: "", password: undefined, ip: undefined });
 
     params = new UsersRouteCreateParameters({
         username: "test"
     });
     expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ username: "test", password: "", ip: undefined });
+    expect(params.toObject()).toStrictEqual({ username: "test", password: undefined, ip: undefined });
 
     params = new UsersRouteCreateParameters({
         password: "test2"
@@ -116,7 +116,7 @@ test("parse", async () => {
     requestData = result.requestData;
     expect(params).toBeInstanceOf(UsersRouteCreateParameters);
     expect(params.authentication).toStrictEqual({ ip: "::1", appUuid: app.uuid, signature: "test2" });
-    expect(params.toObject()).toStrictEqual({ ...requestData, password: "", ip: "::1" });
+    expect(params.toObject()).toStrictEqual({ ...requestData, password: undefined, ip: "::1" });
 
     result = await parseParamsFromMockRequest(undefined, new Date(), "::2", app.uuid, "test2");
     params = result.params;
@@ -131,7 +131,23 @@ test("validate", async () => {
     expect(params).toBeInstanceOf(UsersRouteCreateParameters);
     expect(await params.validate()).toBe(true);
 
-    let result= await parseParamsFromMockRequest(12, "b");
+    let result = await parseParamsFromMockRequest("", "");
+    expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
+    await expect(result.params.validate()).rejects.toThrow(DisplayableApiException);
+
+    result = await parseParamsFromMockRequest("admin", "");
+    expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
+    expect(await result.params.validate()).toBe(true);
+
+    result = await parseParamsFromMockRequest("admin", undefined);
+    expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
+    expect(await result.params.validate()).toBe(true);
+
+    result = await parseParamsFromMockRequest("", "dtWgHbv5cSyZAtN$");
+    expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
+    await expect(result.params.validate()).rejects.toThrow(DisplayableApiException);
+
+    result = await parseParamsFromMockRequest(12, "b");
     expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
     await expect(result.params.validate()).rejects.toThrow(DisplayableApiException);
 
@@ -145,7 +161,7 @@ test("validate", async () => {
 
     result = await parseParamsFromMockRequest("admin", 12);
     expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
-    await expect(result.params.validate()).rejects.toThrow(DisplayableApiException);
+    expect(await result.params.validate()).toBe(true);
 
     result = await parseParamsFromMockRequest("admin", "a");
     expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
