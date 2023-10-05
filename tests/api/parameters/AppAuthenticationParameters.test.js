@@ -1,11 +1,13 @@
 "use strict";
-require("../../../config/dotenv").environment("test");
+const env = require("../../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const { AppAuthenticationParameters } = require("../../../src/api/parameters/AppAuthenticationParameters.class");
+const { AppAuthentication } = require("../../../src/api/authentication/AppAuthentication.class");
 const db = require("../../db");
 const { Log } = require("../../../src/model/Log");
-const { ExternalApplication, ExternalApplicationRepository } = require("../../../src/model/ExternalApplication");
+const { ExternalApplication } = require("../../../src/model/ExternalApplication");
 const { DisplayableApiException } = require("../../../src/exception/DisplayableApiException.class");
+const { ApiException } = require("../../../src/exception");
 
 const httpMocks = require("node-mocks-http");
 const mockRequest = require("../../_mock/request");
@@ -16,6 +18,7 @@ const mockRequest = require("../../_mock/request");
 let app;
 
 beforeAll(async () => {
+    env.enableSilentLogging();
     Log.setLogFile("AppAuthenticationParameters.test");
     await db.connect();
 
@@ -36,39 +39,42 @@ test("constructor", () => {
         foo: "bar",
         bar: 12
     });
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ ip: undefined });
+    expect(params.authentication).toStrictEqual({})
+    expect(params.toObject()).toStrictEqual({});
 });
 
 test("setAuthentication", () => {
     let params = new AppAuthenticationParameters({})
-    params.setAuthentication({});
-    expect(params.authentication).toStrictEqual({ ip: "", appUuid: "", signature: "" })
+    let authenticator = new AppAuthentication();
+    params.populateAuthenticator(0, authenticator);
+    expect(params.authentication).toStrictEqual({ ip: "", uuid: "", signature: "" })
 
-    params.setAuthentication({
-        ip: "a",
-        appUuid: "b",
-        signature: "c"
-    });
-    expect(params.authentication).toStrictEqual({ ip: "a", appUuid: "b", signature: "c" });
-    expect(params.toObject()).toStrictEqual({ ip: "a" });
+    authenticator.ip = "a";
+    authenticator.uuid = "b";
+    authenticator.signature = "c";
+    expect(params.authentication).toStrictEqual({ ip: "a", uuid: "b", signature: "c" });
+    expect(params.toObject()).toStrictEqual({});
 
-    params.setAuthentication({ ip: "127.0.0.1" });
-    expect(params.authentication).toStrictEqual({ ip: "127.0.0.1", appUuid: "", signature: "" });
+    authenticator.ip = "127.0.0.1";
+    authenticator.uuid = "";
+    authenticator.signature = "";
+    expect(params.authentication).toStrictEqual({ ip: "127.0.0.1", uuid: "", signature: "" });
 
-    params.setAuthentication({ appUuid: "11b0b3af-12c0-4416-b451-a9e56d6da321" });
+    authenticator.ip = "";
+    authenticator.uuid = "11b0b3af-12c0-4416-b451-a9e56d6da321";
+    authenticator.signature = "";
     expect(params.authentication).toStrictEqual({
         ip: "",
-        appUuid: "11b0b3af-12c0-4416-b451-a9e56d6da321",
+        uuid: "11b0b3af-12c0-4416-b451-a9e56d6da321",
         signature: ""
     });
 
-    params.setAuthentication({
-        signature: "KaMOz6SOMA=="
-    });
+    authenticator.ip = "";
+    authenticator.uuid = "";
+    authenticator.signature = "KaMOz6SOMA==";
     expect(params.authentication).toStrictEqual({
         ip: "",
-        appUuid: "",
+        uuid: "",
         signature: "KaMOz6SOMA=="
     });
 });
@@ -80,33 +86,38 @@ test("parse", () => {
      */
     let params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
-    expect(params.authentication).toStrictEqual({ ip: "tst", appUuid: "test", signature: "test2" });
+    expect(params.authentication).toStrictEqual({ ip: "tst", uuid: "test", signature: "test2" });
+    expect(params.toObject()).toStrictEqual({});
 
     req = httpMocks.createRequest();
     params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
-    expect(params.authentication).toStrictEqual({ ip: "127.0.0.1", appUuid: "", signature: "" });
+    expect(params.authentication).toStrictEqual({ ip: "127.0.0.1", uuid: "", signature: "" });
+    expect(params.toObject()).toStrictEqual({});
 
     req = mockRequest.createAuthenticationRequest();
     params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
-    expect(params.authentication).toStrictEqual({ ip: "", appUuid: "", signature: "" });
+    expect(params.authentication).toStrictEqual({ ip: "", uuid: "", signature: "" });
+    expect(params.toObject()).toStrictEqual({});
 
     req = mockRequest.createAuthenticationRequest("::1");
     params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::1", appUuid: "", signature: "" });
+    expect(params.authentication).toStrictEqual({ ip: "::1", uuid: "", signature: "" });
+    expect(params.toObject()).toStrictEqual({});
 
     req = mockRequest.createAuthenticationRequest("::2", "tst");
     params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::2", appUuid: "tst", signature: "" });
+    expect(params.authentication).toStrictEqual({ ip: "::2", uuid: "tst", signature: "" });
+    expect(params.toObject()).toStrictEqual({});
 
     req = mockRequest.createAuthenticationRequest("::3", "tst2", "foo");
     params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::3", appUuid: "tst2", signature: "foo" });
-    expect(params.toObject()).toStrictEqual({ ip: "::3" });
+    expect(params.authentication).toStrictEqual({ ip: "::3", uuid: "tst2", signature: "foo" });
+    expect(params.toObject()).toStrictEqual({});
 });
 
 test("validate", async () => {
@@ -156,4 +167,12 @@ test("validate", async () => {
     app.addIp("192.168.0.0");
     await app.save();
     expect(await params.validate()).toBe(true);
+});
+
+test("populateAuthenticator", () => {
+    let params = new AppAuthenticationParameters({});
+    let authenticator = new AppAuthentication();
+    expect(() => params.populateAuthenticator(1, authenticator)).toThrow(ApiException);
+    expect(() => params.populateAuthenticator(0, params)).toThrow(ApiException);
+    expect(() => params.populateAuthenticator(0, authenticator)).not.toThrow();
 });

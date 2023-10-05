@@ -43,25 +43,21 @@ class AppRouteGetAppParameters extends AppAuthenticationParameters
     /**
      * @protected
      * @param {express.Request} req
-     * @param {typeof AppAuthenticationParameters} r
+     * @param {AppRouteGetAppParameters} r
      */
     static parseOwn(req, r)
     {
-        /**
-         * @type {AppRouteGetAppParameters}
-         */
-        let result = r;
-        result.setAll({
+        r.setAll({
             uuid: req.params.uuid
         });
     }
 
     /**
      * @protected
-     * @returns {boolean}
+     * @returns {Promise<boolean>}
      * @throws {DisplayableApiException}
      */
-    validateOwn()
+    async validateOwn()
     {
         if (typeof this.uuid !== "string" || !this.uuid)
         {

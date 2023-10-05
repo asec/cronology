@@ -121,6 +121,16 @@ test("AccessToken generator", () => {
         expect(accessToken.length).toBeGreaterThanOrEqual(40);
         expect(accessToken.length).toBeLessThanOrEqual(79);
     }
+
+    let user = new User({
+        username: "test"
+    });
+    user.createNewAccessToken();
+    expect(user.username).toBe("test");
+    expect(typeof user.accessToken).toBe("string");
+    expect(user.accessToken.length).toBeGreaterThanOrEqual(40);
+    expect(user.accessTokenValid instanceof Date).toBe(true);
+    expect(user.accessTokenValid > new Date()).toBe(true);
 });
 
 test("Create (OK)", async () => {

@@ -1,5 +1,5 @@
 "use strict";
-require("../../../config/dotenv").environment("test");
+const env = require("../../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const { AppRouteGetAppParameters } = require("../../../src/api/parameters/AppRouteGetAppParameters.class");
 const db = require("../../db")
@@ -16,6 +16,7 @@ const {AppAuthenticationParameters} = require("../../../src/api/parameters/AppAu
 let app;
 
 beforeAll(async () => {
+    env.enableSilentLogging();
     Log.setLogFile("AppRouteGetAppParameters-test");
     await db.connect();
 
@@ -33,19 +34,17 @@ afterAll(async () => {
 
 test("constructor", () => {
     let params = new AppRouteGetAppParameters({});
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ uuid: "", ip: undefined });
+    expect(params.toObject()).toStrictEqual({ uuid: "" });
 
     params = new AppRouteGetAppParameters({
         uuid: "aaa"
     });
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ uuid: "aaa", ip: undefined });
+    expect(params.toObject()).toStrictEqual({ uuid: "aaa" });
 
     params = new AppRouteGetAppParameters({
         uuid: 12
     });
-    expect(params.toObject()).toStrictEqual({ uuid: 12, ip: undefined });
+    expect(params.toObject()).toStrictEqual({ uuid: 12 });
 });
 
 test("parse", () => {
@@ -62,14 +61,12 @@ test("parse", () => {
 
     let params = AppRouteGetAppParameters.parse(req);
     expect(params).toBeInstanceOf(AppRouteGetAppParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::1", appUuid: "appUuid", signature: "signature" });
-    expect(params.toObject()).toStrictEqual({ uuid: 12, ip: "::1" });
+    expect(params.toObject()).toStrictEqual({ uuid: 12 });
 
     req = mockRequest.createAuthenticationRequest("::2", "uuid", "sign");
     params = AppRouteGetAppParameters.parse(req);
     expect(params).toBeInstanceOf(AppRouteGetAppParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::2", appUuid: "uuid", signature: "sign" });
-    expect(params.toObject()).toStrictEqual({ uuid: undefined, ip: "::2" });
+    expect(params.toObject()).toStrictEqual({ uuid: undefined });
 });
 
 test("validate", async () => {

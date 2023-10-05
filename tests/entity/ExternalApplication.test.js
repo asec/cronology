@@ -366,6 +366,7 @@ test("hasValidKeys", async () => {
 test("signatures", async () => {
 
     const { AppRouteGetAppParameters } = require("../../src/api/parameters/AppRouteGetAppParameters.class");
+    const { AppAuthentication } = require("../../src/api/authentication");
 
     let app = createApp("test");
     await app.generateKeys();
@@ -419,11 +420,11 @@ test("signatures", async () => {
     let params = new AppRouteGetAppParameters({
         uuid: "test"
     });
-    params.setAuthentication({
-        ip: "::1",
-        appUuid: "test",
-        signature: ""
-    });
+    let authenticator = new AppAuthentication();
+    authenticator.ip = "::1";
+    authenticator.uuid = "test";
+    authenticator.signature = "";
+    params.populateAuthenticator(0, authenticator);
     signature = await app.generateSignature(params);
     expect(await app.validateSignature(signature, params));
     expect(await app.validateSignature(signature, params.toObject()));

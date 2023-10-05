@@ -67,12 +67,14 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
      */
     validateOwn()
     {
-        let usernameRegex = /^[a-zA-Z0-9_\-]{5,}$/;
+        let usernameRegex = /^[a-zA-Z0-9_\-.@]{5,100}$/;
         let errors = {
-            username: "Invalid parameter: 'username'. Must be at least 5 characters long," +
-                " must only contain lowercase and uppercase letters, numbers and the following characters: '_', '-'.",
-            password: "Invalid parameter: 'password'. Must be at least 12 characters log, must contain at least one" +
-                " uppercase letter, one lowercase letter, one number and one special character."
+            username: "Invalid parameter: 'username'. Must be between 5 and 100 characters long," +
+                " must only contain lowercase and uppercase letters, numbers and the following characters: '_'," +
+                " '-', '.', '@'.",
+            password: "Invalid parameter: 'password'. Must be at least 12 characters long, at most 100 characters long," +
+                " must contain at least one uppercase letter, one lowercase letter, one number and one" +
+                " special character."
         };
         if (typeof this.username !== "string")
         {
@@ -87,12 +89,11 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
         {
             this.set("password", User.generateRandomPassword());
         }
-
-        /*if (typeof this.password !== "string")
+        if (!validator.isStrongPassword(this.password, { minLength: 12 }))
         {
             throw new DisplayableApiException(errors.password);
-        }*/
-        if (!validator.isStrongPassword(this.password, { minLength: 12 }))
+        }
+        if (this.password.length > 100)
         {
             throw new DisplayableApiException(errors.password);
         }

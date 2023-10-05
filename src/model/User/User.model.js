@@ -108,7 +108,6 @@ const userSchema = new mongoose.Schema({
         },
         /**
          * @memberOf UserModel
-         * @function
          * @param {number} length
          * @returns {string}
          */
@@ -139,6 +138,19 @@ const userSchema = new mongoose.Schema({
                 throw new Error("This user has no password, so it cannot be compared agains the argument.");
             }
             return bcrypt.compareSync(rawPassword, this.password);
+        },
+
+        /**
+         * @memberOf UserModel
+         * @instance
+         */
+        createNewAccessToken: function ()
+        {
+            this.accessToken = UserModel.generateAccessToken();
+            this.accessTokenValid = new Date();
+            this.accessTokenValid.setTime(
+                this.accessTokenValid.getTime() + process.env.CONF_API_USERSESSION_LENGTH * 1000 * 60
+            );
         }
     },
     virtuals: {

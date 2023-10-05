@@ -167,6 +167,11 @@ class User extends Entity
 		return this.entity.checkPassword(rawPassword);
 	}
 
+	createNewAccessToken()
+	{
+		return this.entity.createNewAccessToken();
+	}
+
 	/**
 	 * @param {number} [length = 20] - Must be at least 20, if it is smaller than that the length will be randomly
 	 * generated between 20 and 40.

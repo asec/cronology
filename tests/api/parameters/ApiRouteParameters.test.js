@@ -2,6 +2,7 @@
 require("../../../config/dotenv").environment("test");
 const { test, expect } = require("@jest/globals");
 const { ApiRouteParameters } = require("../../../src/api/parameters/ApiRouteParameters.class");
+const { ApiAuthenticationBase } = require("../../../src/api/authentication/ApiAuthenticationBase.class");
 
 class TestTmp extends ApiRouteParameters
 {
@@ -19,6 +20,11 @@ class TestTmp extends ApiRouteParameters
     {
         return typeof this.foo === "string" && typeof this.aaa === "number" && this.password === "test";
     }
+
+    async validateOwn()
+    {
+        return true;
+    }
 }
 
 class AnotherTestTmp extends ApiRouteParameters
@@ -32,9 +38,23 @@ class AnotherTestTmp extends ApiRouteParameters
         this.setAll(params);
     }
 
-    async validate()
+    static setupAuthentication()
+    {
+        this.addAuthentication(TestAuthentication);
+    }
+
+    async validateOwn()
     {
         return true;
+    }
+}
+
+class TestAuthentication extends ApiAuthenticationBase
+{
+
+    async validate(params)
+    {
+        return false;
     }
 }
 
@@ -103,8 +123,8 @@ test("sanitize", () => {
 });
 
 test("validate", async () => {
-    let params = new ApiRouteParameters();
-    await expect(params.validate()).rejects.toThrow();
+    let params = new ApiRouteParameters({});
+    expect(await params.validate()).toBe(undefined);
 
     params = new TestTmp({
         foo: "aa"
@@ -119,4 +139,11 @@ test("validate", async () => {
 
     params.set("password", "test");
     expect(await params.validate()).toBe(true);
+
+    params = new AnotherTestTmp();
+    let authenticator = new TestAuthentication();
+    params.populateAuthenticator(0, authenticator);
+    expect(await params.validate()).toBe(false);
+
+    expect(authenticator.toObject()).toStrictEqual({});
 });

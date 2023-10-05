@@ -65,6 +65,7 @@ test("execute: DefaultRoute", async () => {
 
 test("execute: AppRoute::getAppByUuid", async () => {
     const { AppRouteGetAppParameters } = require("../../src/api/parameters/AppRouteGetAppParameters.class");
+    const { AppAuthentication } = require("../../src/api/authentication/AppAuthentication.class");
     const { ExternalApplication } = require("../../src/model/ExternalApplication");
 
     let app = new ExternalApplication({
@@ -73,6 +74,8 @@ test("execute: AppRoute::getAppByUuid", async () => {
     let params = new AppRouteGetAppParameters({
        uuid: app.uuid
     });
+
+    let authenticator = new AppAuthentication();
 
     /**
      * @param {AppRouteGetAppParameters} params
@@ -119,24 +122,19 @@ test("execute: AppRoute::getAppByUuid", async () => {
     await app.save();
     await executeAndExpectError(params, "permission");
 
-    params.setAuthentication({
-        ip: "::2"
-    });
+    authenticator.ip = "::2";
+    params.populateAuthenticator(0, authenticator);
     await executeAndExpectError(params, "permission");
 
     app.addIp("::2");
     await app.save();
     await executeAndExpectSuccess(params);
 
-    params.setAuthentication({
-        appUuid: app.uuid
-    });
+    authenticator.ip = "";
+    authenticator.uuid = app.uuid;
     await executeAndExpectError(params, "permission");
 
-    params.setAuthentication({
-        ip: "::1",
-        appUuid: app.uuid
-    });
+    authenticator.ip = "::1";
     await executeAndExpectSuccess(params);
 
     params = new AppRouteGetAppParameters({});
@@ -250,6 +248,9 @@ test("execute: UsersRoute::createUser", async () => {
     await executeAndExpectError(params, "password");
 
     params.set("username", "vAlid_us3r-name");
+    await executeAndExpectError(params, "password");
+
+    params.set("username", "info@localhost.com");
     await executeAndExpectError(params, "password");
 
     params.set("password", 12);

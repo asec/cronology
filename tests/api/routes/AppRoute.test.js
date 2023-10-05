@@ -5,6 +5,7 @@ const { AppRoute } = require("../../../src/api/routes/AppRoute.class");
 const { ApiRouteParameters } = require("../../../src/api/parameters/ApiRouteParameters.class");
 const { AppRouteGetAppParameters } = require("../../../src/api/parameters/AppRouteGetAppParameters.class");
 const { ApiResult, ApiError } = require("../../../src/api/responses");
+const { AppAuthentication } = require("../../../src/api/authentication/AppAuthentication.class");
 const { ExternalApplication } = require("../../../src/model/ExternalApplication");
 const { Log } = require("../../../src/model/Log");
 require("../../../src/utils/Function");
@@ -79,10 +80,9 @@ test("route: get /app/:uuid", async () => {
     let params = new AppRouteGetAppParameters({
         uuid: app.uuid
     });
-    params.setAuthentication({
-        ip: "::1",
-        appUuid: app.uuid
-    });
+    let auth = new AppAuthentication();
+    auth.ip = "::1";
+    params.populateAuthenticator(0, auth);
     await checkRoute(
         route,
         "get",

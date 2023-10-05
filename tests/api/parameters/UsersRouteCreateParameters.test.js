@@ -72,27 +72,23 @@ async function parseParamsFromMockRequest(username, password, ip = null, uuid = 
 
 test("constructor", () => {
     let params = new UsersRouteCreateParameters({});
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ username: "", password: undefined, ip: undefined });
+    expect(params.toObject()).toStrictEqual({ username: "", password: undefined });
 
     params = new UsersRouteCreateParameters({
         username: "test"
     });
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ username: "test", password: undefined, ip: undefined });
+    expect(params.toObject()).toStrictEqual({ username: "test", password: undefined });
 
     params = new UsersRouteCreateParameters({
         password: "test2"
     });
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ username: "", password: "test2", ip: undefined });
+    expect(params.toObject()).toStrictEqual({ username: "", password: "test2" });
 
     params = new UsersRouteCreateParameters({
         username: "test2",
         password: "test3"
     });
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({ username: "test2", password: "test3", ip: undefined });
+    expect(params.toObject()).toStrictEqual({ username: "test2", password: "test3" });
 });
 
 test("parse", async () => {
@@ -102,8 +98,7 @@ test("parse", async () => {
         requestData
     } = await parseParamsFromMockRequest("a", "b", "::1", app.uuid, "test");
     expect(params).toBeInstanceOf(UsersRouteCreateParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::1", appUuid: app.uuid, signature: "test" });
-    expect(params.toObject()).toStrictEqual({ ...requestData, ip: "::1" });
+    expect(params.toObject()).toStrictEqual({ ...requestData });
 
     let result = await parseParamsFromMockRequest(
         1,
@@ -115,15 +110,13 @@ test("parse", async () => {
     params = result.params;
     requestData = result.requestData;
     expect(params).toBeInstanceOf(UsersRouteCreateParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::1", appUuid: app.uuid, signature: "test2" });
-    expect(params.toObject()).toStrictEqual({ ...requestData, password: undefined, ip: "::1" });
+    expect(params.toObject()).toStrictEqual({ ...requestData, password: undefined });
 
     result = await parseParamsFromMockRequest(undefined, new Date(), "::2", app.uuid, "test2");
     params = result.params;
     requestData = result.requestData;
     expect(params).toBeInstanceOf(UsersRouteCreateParameters);
-    expect(params.authentication).toStrictEqual({ ip: "::2", appUuid: app.uuid, signature: "test2" });
-    expect(params.toObject()).toStrictEqual({ ...requestData, username: "", ip: "::2" });
+    expect(params.toObject()).toStrictEqual({ ...requestData, username: "" });
 });
 
 test("validate", async () => {
@@ -182,4 +175,46 @@ test("validate", async () => {
     result = await parseParamsFromMockRequest("admin", "aaaaaaaaaaaaA1$");
     expect(result.params).toBeInstanceOf(UsersRouteCreateParameters);
     expect(await result.params.validate()).toBe(true);
+
+    let username = "admin";
+    let longUsername = "";
+    for (let i = 0; i < 100; i++)
+    {
+        longUsername += username;
+    }
+
+    let password = "aaaaaaaaaaaaA1$";
+    let longPassword = "";
+    for (let i = 0; i < 100; i++)
+    {
+        longPassword += password;
+    }
+
+    result = await parseParamsFromMockRequest(longUsername, password);
+    await expect(result.params.validate()).rejects.toThrow(DisplayableApiException);
+    try
+    {
+        await result.params.validate();
+    }
+    /**
+     * @type {DisplayableApiException}
+     */
+    catch (e)
+    {
+        expect(e.message).toMatch("username");
+    }
+
+    result = await parseParamsFromMockRequest(username, longPassword);
+    await expect(result.params.validate()).rejects.toThrow(DisplayableApiException);
+    try
+    {
+        await result.params.validate();
+    }
+    /**
+     * @type {DisplayableApiException}
+     */
+    catch (e)
+    {
+        expect(e.message).toMatch("password");
+    }
 });

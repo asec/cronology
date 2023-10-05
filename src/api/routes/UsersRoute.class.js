@@ -29,9 +29,9 @@ class UsersRoute extends ApiRoute
         let user = new User({
             username: params.username,
             password: params.password,
-            isAdmin: false,
-            accessToken: User.generateAccessToken()
+            isAdmin: false
         });
+        user.createNewAccessToken();
 
         await user.save();
 
