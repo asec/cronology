@@ -49,6 +49,9 @@ class ApiWithExpress
                     case "get":
                         this.#app.get(cRoute.route, this.#createAction(method, cRoute.route, cRoute.parameterClass));
                         break;
+                    case "post":
+                        this.#app.post(cRoute.route, this.#createAction(method, cRoute.route, cRoute.parameterClass));
+                        break;
                     case "put":
                         this.#app.put(cRoute.route, this.#createAction(method, cRoute.route, cRoute.parameterClass));
                         break;

@@ -42,10 +42,10 @@ test("set", () => {
     expect(response.set("invalid", "teszt")).toBe(false);
     expect(response.toObject()).toStrictEqual({ success: true });
 
-    expect(response.set({ success: false })).toBe(true);
+    expect(response.setAll({ success: false })).toBe(true);
     expect(response.toObject()).toStrictEqual({ success: false });
 
-    expect(response.set({ success: true, invalid: "aaaa" })).toBe(false);
+    expect(response.setAll({ success: true, invalid: "aaaa" })).toBe(false);
     expect(response.toObject()).toStrictEqual({ success: true });
 });
 

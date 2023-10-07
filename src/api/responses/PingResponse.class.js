@@ -9,20 +9,26 @@ const { ApiResponse } = require("./ApiResponse.class");
 class PingResponse extends ApiResponse
 {
     /**
-     * @type {PingResponseBean}
+     * @type {string}
      */
-    data = {
-        success: false,
-        version: ""
-    };
+    version = "";
 
     /**
-     * @param {PingResponseBean} values
+     * @param {PingResponseBean} params
      */
-    constructor(values)
+    constructor(params)
     {
-        super(values);
-        this.set(values);
+        super(params);
+        this.setAll(params);
+    }
+
+    /**
+     * @param {PingResponseBean} params
+     * @returns {boolean}
+     */
+    setAll(params)
+    {
+        return super.setAll(params);
     }
 
     /**

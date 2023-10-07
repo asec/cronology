@@ -9,20 +9,26 @@ const { ApiResponse } = require("./ApiResponse.class");
 class ApiResult extends ApiResponse
 {
     /**
-     * @type {ApiResultBean}
+     * @type {any}
      */
-    data = {
-        success: false,
-        result: null
-    };
+    result = null;
 
     /**
-     * @param {ApiResultBean} values
+     * @param {ApiResultBean} params
      */
-    constructor(values)
+    constructor(params)
     {
-        super(values);
-        this.set(values);
+        super(params);
+        this.setAll(params);
+    }
+
+    /**
+     * @param {ApiResultBean} params
+     * @returns {boolean}
+     */
+    setAll(params)
+    {
+        return super.setAll(params);
     }
 
     /**

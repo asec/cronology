@@ -12,32 +12,34 @@ const {del} = require("express/lib/application");
 class ApiError extends ApiResponse
 {
     /**
-     * @type {ApiErrorBean}
+     * @type {string}
      */
-    data = {
-        success: false,
-        error: "",
-        displayMessage: "An unexpected error occurred while processing your request.",
-        displayable: false
-    };
+    error = "";
+    /**
+     * @type {string}
+     */
+    displayMessage = "An unexpected error occurred while processing your request.";
+    /**
+     * @type {boolean}
+     */
+    displayable = false;
 
     /**
-     * @param {ApiErrorBean} values
+     * @param {ApiErrorBean} params
      */
-    constructor(values)
+    constructor(params)
     {
-        super(values);
-        this.set(values);
+        super(params);
+        this.setAll(params);
     }
 
     /**
-     * @param {string|ApiErrorBean} key
-     * @param {*} value
+     * @param {ApiErrorBean} params
      * @returns {boolean}
      */
-    set(key, value = undefined)
+    setAll(params)
     {
-        return super.set(key, value);
+        return super.setAll(params);
     }
 
     /**
@@ -48,7 +50,7 @@ class ApiError extends ApiResponse
         /**
          * @type {ApiErrorBean}
          */
-        let data = {...this.data};
+        let data = super.toObject();
         let displayable = data.displayable;
         delete data.displayable;
         if (!displayable && process.env.APP_ENV !== "test")

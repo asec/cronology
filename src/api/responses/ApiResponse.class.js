@@ -1,72 +1,34 @@
 "use strict";
+const { Bean } = require("../datastructures/Bean.class");
 
 /**
- * @typedef {Object} ApiResponseBean
+ * @typedef {BeanObject} ApiResponseBean
  * @property {boolean} success
  */
 
-class ApiResponse
+class ApiResponse extends Bean
 {
     /**
-     * @type {ApiResponseBean}
+     * @type {boolean}
      */
-    data = {
-        success: false
-    };
+    success = false;
 
     /**
-     * @param {ApiResponseBean} values
+     * @param {ApiResponseBean} params
      */
-    constructor(values)
+    constructor(params)
     {
-        this.set(values);
+        super(params);
+        this.setAll(params);
     }
 
     /**
-     * @param {string|ApiResponseBean} key
-     * @param {*} [value = undefined]
+     * @param {ApiResponseBean} params
      * @returns {boolean}
      */
-    set(key, value = undefined)
+    setAll(params)
     {
-        let success = true;
-        if (value === undefined)
-        {
-            if (!key || typeof key !== "object")
-            {
-                return false;
-            }
-
-            for (let i in key)
-            {
-                let keyWasSetSuccessfully = this.#set(i, key[i]);
-                if (!keyWasSetSuccessfully)
-                {
-                    success = false;
-                }
-            }
-
-            return success;
-        }
-
-        return this.#set(key, value);
-    }
-
-    /**
-     * @param {string} key
-     * @param {*} value
-     * @returns {boolean}
-     */
-    #set(key, value)
-    {
-        if (!this.data.hasOwnProperty(key))
-        {
-            return false;
-        }
-
-        this.data[key] = value;
-
-        return true;
+        return super.setAll(params);
     }
 
     /**
@@ -74,7 +36,7 @@ class ApiResponse
      */
     toObject()
     {
-        return {...this.data};
+        return super.toObject();
     }
 
     /**

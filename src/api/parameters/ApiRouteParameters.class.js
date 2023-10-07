@@ -1,13 +1,14 @@
 "use strict";
 const express = require("express");
+const { Bean } = require("../datastructures/Bean.class");
 const { ApiAuthenticationBase } = require("../authentication/ApiAuthenticationBase.class");
 const { ApiException } = require("../../exception");
 
 /**
- * @typedef {{}} ApiRouteParameterBean
+ * @typedef {BeanObject} ApiRouteParameterBean
  */
 
-class ApiRouteParameters
+class ApiRouteParameters extends Bean
 {
     /**
      * @protected
@@ -25,36 +26,18 @@ class ApiRouteParameters
      */
     constructor(params)
     {
+        super(params);
         this.setAll(params);
         this.constructor.setupAuthentication();
     }
 
     /**
-     * @param {string} key
-     * @param {*} value
-     * @returns {boolean}
-     */
-    set(key, value)
-    {
-        if (!this.hasOwnProperty(key))
-        {
-            return false;
-        }
-
-        this[key] = value;
-
-        return true;
-    }
-
-    /**
      * @param {ApiRouteParameterBean} params
+     * @returns {boolean}
      */
     setAll(params)
     {
-        for (let i in params)
-        {
-            this.set(i, params[i]);
-        }
+        return super.setAll(params);
     }
 
     /**
@@ -178,7 +161,7 @@ class ApiRouteParameters
      */
     toObject()
     {
-        let result = {...this};
+        let result = super.toObject();
         delete result.authenticators;
         return result;
     }

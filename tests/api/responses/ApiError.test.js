@@ -58,7 +58,7 @@ test("constructor", () => {
 });
 
 test("set", () => {
-    let response = new ApiError();
+    let response = new ApiError({});
 
     expect(response.set("error", "test")).toBe(true);
     expect(response.toObject()).toStrictEqual({ success: false, error: "test", displayMessage });
@@ -70,10 +70,10 @@ test("set", () => {
         success: true,
         error: "a"
     });
-    expect(response.set({ success: false, error: "random error" })).toBe(true);
+    expect(response.setAll({ success: false, error: "random error" })).toBe(true);
     expect(response.toObject()).toStrictEqual({ success: false, error: "random error", displayMessage });
 
-    expect(response.set({ success: false, error: "b", valami: 12 })).toBe(false);
+    expect(response.setAll({ success: false, error: "b", valami: 12 })).toBe(false);
     expect(response.toObject()).toStrictEqual({ success: false, error: "b", displayMessage });
 
     expect(response.set("displayMessage", "")).toBe(true);

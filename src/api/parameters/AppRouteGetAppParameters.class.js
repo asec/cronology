@@ -26,10 +26,11 @@ class AppRouteGetAppParameters extends AppAuthenticationParameters
 
     /**
      * @param {AppRouteGetAppParametersBean} params
+     * @returns {boolean}
      */
     setAll(params)
     {
-        super.setAll(params);
+        return super.setAll(params);
     }
 
     /**

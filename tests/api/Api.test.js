@@ -28,7 +28,7 @@ test("init", async () => {
 test("getRoutes", () => {
     let routes = Api.getRoutes();
     expect(routes.get).toHaveLength(4);
-    expect(routes.post).toHaveLength(0);
+    expect(routes.post).toHaveLength(1);
     expect(routes.put).toHaveLength(1);
     expect(routes.delete).toHaveLength(1);
 });

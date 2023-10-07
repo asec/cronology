@@ -32,10 +32,11 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
 
     /**
      * @param {UsersRouteCreateParametersBean} params
+     * @returns {boolean}
      */
     setAll(params)
     {
-        super.setAll(params);
+        return super.setAll(params);
     }
 
     /**
@@ -48,24 +49,21 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
 
     /**
      * @protected
+     * @param request
+     * @param {UsersRouteCreateParameters} result
      * @returns {UsersRouteCreateParameters}
      */
-    static parseOwn(request, r)
+    static parseOwn(request, result)
     {
-        /**
-         * @type {UsersRouteCreateParameters}
-         */
-        let result = r;
         result.setAll(request.body);
-        return result;
     }
 
     /**
      * @protected
-     * @returns {boolean}
+     * @returns {Promise<boolean>}
      * @throws {DisplayableApiException}
      */
-    validateOwn()
+    async validateOwn()
     {
         let usernameRegex = /^[a-zA-Z0-9_\-.@]{5,100}$/;
         let errors = {
