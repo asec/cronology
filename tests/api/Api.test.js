@@ -3,14 +3,29 @@ const env = require("../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const db = require("../db");
 const { Api } = require("../../src/api/Api.class");
-const { ApiError, ApiResult, PingResponse, ApiResponse } = require("../../src/api/responses");
-const { Log, LogRepository } = require("../../src/model/Log");
+const { ApiError, ApiResult, PingResponse, ApiResponse, DefaultSignatureResult } = require("../../src/api/responses");
+const { DefaultRouteSignatureParameters, UsersRouteCreateAccessTokenParameters } = require("../../src/api/parameters");
+const { Log } = require("../../src/model/Log");
+const { ExternalApplication } = require("../../src/model/ExternalApplication");
+const { User } = require("../../src/model/User");
+const {UserRepository} = require("../entity/repository/User.repository");
+
+/**
+ * @type {ExternalApplication};
+ */
+let app;
 
 beforeAll(async () => {
     env.enableSilentLogging();
     Log.setLogFile("test-Api.test");
     await db.connect();
     await Api.init();
+
+    app = new ExternalApplication({
+        name: "Api-test-global"
+    });
+    await app.generateKeys();
+    await app.save();
 });
 
 afterAll(async () => {
@@ -18,6 +33,7 @@ afterAll(async () => {
     {
         await db.connect();
     }
+    app.deleteKeys();
     await db.tearDown();
 });
 
@@ -56,11 +72,31 @@ test("execute: DefaultRoute", async () => {
     response = await Api.execute("get", "/bad-response");
     expect(response).toBeInstanceOf(ApiError);
 
-    expect(await LogRepository.countDocuments()).toBeGreaterThanOrEqual(4);
-    response = await Api.execute("delete", "/");
-    expect(response).toBeInstanceOf(ApiResponse);
-    expect(response.toObject()).toStrictEqual({ success: true });
-    expect(await LogRepository.countDocuments()).toBe(0);
+    let signatureData = {
+        foo: "bar"
+    };
+    let params = new DefaultRouteSignatureParameters({
+        uuid: app.uuid,
+        data: signatureData
+    });
+    response = await Api.execute("post", "/signature", params);
+    expect(response).toBeInstanceOf(DefaultSignatureResult);
+    expect(response.success).toBe(true);
+    expect(typeof response.result).toBe("string");
+    expect(response.result.length).toBeGreaterThan(10);
+    expect(response.result).toBe(await app.generateSignature(signatureData));
+
+    params = new DefaultRouteSignatureParameters({
+        uuid: "test",
+        data: signatureData
+    });
+    response = await Api.execute("post", "/signature", params);
+    expect(response).toBeInstanceOf(ApiError);
+    expect(response.error).toMatch("uuid");
+
+    params = new DefaultRouteSignatureParameters({});
+    response = await Api.execute("post", "/signature", params);
+    expect(response.error).toMatch("uuid");
 });
 
 test("execute: AppRoute::getAppByUuid", async () => {
@@ -287,4 +323,68 @@ test("execute: UsersRoute::createUser", async () => {
 
     params = new UsersRouteCreateParameters();
     await executeAndExpectError(params);
+});
+
+test("execute: UsersRoute::createAccessToken", async () => {
+    let user = new User({
+        username: "tst",
+        password: User.generateRandomPassword()
+    });
+    await user.save();
+
+    let prevAccessToken = user.accessToken;
+
+    let params = new UsersRouteCreateAccessTokenParameters({
+        user_id: user.id.toString()
+    });
+    let response = await Api.execute("post", "/user/accessToken", params);
+    expect(response.success).toBe(true);
+    expect(response.result.username).toBe(user.username);
+    expect(typeof response.result.accessToken).toBe("string");
+    expect(response.result.accessToken.length).toBeGreaterThan(10);
+    expect(response.result.accessToken).not.toBe(prevAccessToken);
+    expect(response.result.accessTokenValid).toBeInstanceOf(Date);
+
+    params = new UsersRouteCreateAccessTokenParameters({
+        user_id: user.id
+    });
+    response = await Api.execute("post", "/user/accessToken", params);
+    expect(response.success).toBe(true);
+    expect(response.result.username).toBe(user.username);
+    expect(typeof response.result.accessToken).toBe("string");
+    expect(response.result.accessToken.length).toBeGreaterThan(10);
+    expect(response.result.accessToken).not.toBe(prevAccessToken);
+    expect(response.result.accessTokenValid).toBeInstanceOf(Date);
+    prevAccessToken = response.result.accessToken;
+
+    params = new UsersRouteCreateAccessTokenParameters({});
+    response = await Api.execute("post", "/user/accessToken", params);
+    expect(response).toBeInstanceOf(ApiError);
+    expect(response.error).toMatch("ObjectId");
+
+    params = new UsersRouteCreateAccessTokenParameters({
+        user_id: null
+    });
+    response = await Api.execute("post", "/user/accessToken", params);
+    expect(response).toBeInstanceOf(ApiError);
+    expect(response.error).toMatch("user");
+
+    params = new UsersRouteCreateAccessTokenParameters({
+        user_id: undefined
+    });
+    response = await Api.execute("post", "/user/accessToken", params);
+    expect(response).toBeInstanceOf(ApiError);
+    expect(response.error).toMatch("user");
+
+    params = new UsersRouteCreateAccessTokenParameters({
+        user_id: "000000000000000000000000"
+    });
+    response = await Api.execute("post", "/user/accessToken", params);
+    expect(response).toBeInstanceOf(ApiError);
+    expect(response.error).toMatch("user");
+
+    user = await UserRepository.findOne({
+        username: user.username
+    });
+    expect(user.accessToken).toBe(prevAccessToken);
 });

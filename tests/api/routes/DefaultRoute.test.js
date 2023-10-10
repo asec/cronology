@@ -4,8 +4,8 @@ const { test, expect } = require("@jest/globals");
 const { DefaultRoute } = require("../../../src/api/routes");
 const { ApiResponse, PingResponse } = require("../../../src/api/responses");
 const { ApiRouteParameters } = require("../../../src/api/parameters/ApiRouteParameters.class");
-const packageInfo = require("../../../package.json");
-const {UsersRouteCreateParameters} = require("../../../src/api/parameters/UsersRouteCreateParameters.class");
+const { DefaultRouteSignatureParameters } = require("../../../src/api/parameters");
+require("../../../src/utils/Function");
 
 /**
  * @param {ApiRouteDescriptor} route
@@ -79,6 +79,13 @@ test("getRoutes", () => {
         routes[3],
         "delete",
         "/"
+    );
+
+    checkRouteFormat(
+        routes[4],
+        "post",
+        "/signature",
+        DefaultRouteSignatureParameters
     );
 
     const env = process.env.APP_ENV;
