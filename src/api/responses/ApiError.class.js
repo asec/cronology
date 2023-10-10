@@ -30,7 +30,10 @@ class ApiError extends ApiResponse
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "ApiError")
+        {
+            this.setAll(params);
+        }
     }
 
     /**

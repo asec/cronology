@@ -1,8 +1,9 @@
 "use strict";
 const express = require("express");
+const { Bean } = require("../datastructures/Bean.class");
 const { ApiException } = require("../../exception");
 
-class ApiAuthenticationBase
+class ApiAuthenticationBase extends Bean
 {
     /**
      * @abstract
@@ -18,14 +19,6 @@ class ApiAuthenticationBase
      * @throws {ApiException}
      */
     async validate(params) {}
-
-    /**
-     * @returns {{}}
-     */
-    toObject()
-    {
-        return {};
-    }
 }
 
 module.exports = {

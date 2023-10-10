@@ -3,11 +3,39 @@ const { ApiAuthenticationBase } = require("./ApiAuthenticationBase.class");
 const { DisplayableApiException } = require("../../exception");
 const { ExternalApplicationRepository } = require("../../model/ExternalApplication");
 
+/**
+ * @typedef {BeanObject} AppAuthenticationBean
+ * @property {string} [ip]
+ * @property {string} [uuid]
+ * @property {string} [signature]
+ */
+
 class AppAuthentication extends ApiAuthenticationBase
 {
     ip = "";
     uuid = "";
     signature = "";
+
+    /**
+     * @param {AppAuthenticationBean} props
+     */
+    constructor(props)
+    {
+        super(props);
+        if (this.constructor.name === "AppAuthentication")
+        {
+            this.setAll(props);
+        }
+    }
+
+    /**
+     * @param {AppAuthenticationBean} params
+     * @returns {boolean}
+     */
+    setAll(params)
+    {
+        return super.setAll(params);
+    }
 
     /**
      * @returns {AppAuthentication}
@@ -60,13 +88,12 @@ class AppAuthentication extends ApiAuthenticationBase
         return true;
     }
 
+    /**
+     * @returns {AppAuthenticationBean}
+     */
     toObject()
     {
-        return {
-            ip: this.ip,
-            uuid: this.uuid,
-            signature: this.signature
-        };
+        return super.toObject();
     }
 }
 

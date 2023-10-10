@@ -21,7 +21,10 @@ class AppRouteGetAppParameters extends AppAuthenticationParameters
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "AppRouteGetAppParameters")
+        {
+            this.setAll(params);
+        }
     }
 
     /**
@@ -31,6 +34,14 @@ class AppRouteGetAppParameters extends AppAuthenticationParameters
     setAll(params)
     {
         return super.setAll(params);
+    }
+
+    /**
+     * @returns {AppRouteGetAppParametersBean}
+     */
+    toObject()
+    {
+        return super.toObject();
     }
 
     /**

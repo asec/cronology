@@ -19,7 +19,10 @@ class DefaultSignatureResult extends ApiResult
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "DefaultSignatureResult")
+        {
+            this.setAll(params);
+        }
     }
 
     /**

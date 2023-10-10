@@ -19,7 +19,10 @@ class UsersCreateUserResult extends ApiResult
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "UsersCreateUserResult")
+        {
+            this.setAll(params);
+        }
     }
 
     /**

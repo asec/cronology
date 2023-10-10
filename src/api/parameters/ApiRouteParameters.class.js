@@ -27,7 +27,10 @@ class ApiRouteParameters extends Bean
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "ApiRouteParameters")
+        {
+            this.setAll(params);
+        }
     }
 
     /**
@@ -107,6 +110,10 @@ class ApiRouteParameters extends Bean
     async validate()
     {
         let valid = true;
+        if (this.constructor.authentication.length !== this.authenticators.length)
+        {
+            throw new Error("Not all authenticators have been successfully bound to this class.");
+        }
         for (let i = 0; i < this.authenticators.length; i++)
         {
             valid = valid && await this.authenticators[i].validate(this.toObject());

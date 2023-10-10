@@ -25,7 +25,10 @@ class DefaultRouteSignatureParameters extends ApiRouteParameters
     constructor(params)
     {
         super(params);
-        this.setAll(params)
+        if (this.constructor.name === "DefaultRouteSignatureParameters")
+        {
+            this.setAll(params);
+        }
     }
 
     /**
@@ -35,6 +38,14 @@ class DefaultRouteSignatureParameters extends ApiRouteParameters
     setAll(params)
     {
         return super.setAll(params);
+    }
+
+    /**
+     * @returns {DefaultRouteSignatureParametersBean}
+     */
+    toObject()
+    {
+        return super.toObject();
     }
 
     /**

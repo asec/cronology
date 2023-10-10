@@ -27,7 +27,10 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "UsersRouteCreateParameters")
+        {
+            this.setAll(params);
+        }
     }
 
     /**
@@ -37,6 +40,14 @@ class UsersRouteCreateParameters extends AppAuthenticationParameters
     setAll(params)
     {
         return super.setAll(params);
+    }
+
+    /**
+     * @returns {UsersRouteCreateParametersBean}
+     */
+    toObject()
+    {
+        return super.toObject();
     }
 
     /**

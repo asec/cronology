@@ -35,7 +35,7 @@ class ApiResult extends ApiResponse
     }
 
     /**
-     * @returns {ApiResponseBean}
+     * @returns {ApiResultBean}
      */
     toObject()
     {

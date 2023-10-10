@@ -172,6 +172,95 @@ test("validate", async () => {
     app.addIp("192.168.0.0");
     await app.save();
     expect(await params.validate()).toBe(true);
+
+    /**
+     * @param {AppAuthenticationParameters} params
+     * @param {string} errorToMatch
+     * @returns {Promise<void>}
+     */
+    async function tryAndExpectError(params, errorToMatch = "")
+    {
+        try
+        {
+            await params.validate();
+            expect(false).toBe(true);
+        }
+        /**
+         * @type {Error}
+         */
+        catch (e)
+        {
+            expect(e.message).toMatch(errorToMatch);
+        }
+    }
+
+    params = new AppAuthenticationParameters({});
+    await tryAndExpectError(params, "authenticators");
+
+    let authenticator = new AppAuthentication({});
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "IP");
+
+    authenticator = new AppAuthentication({
+        ip: "a"
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "application");
+
+    authenticator = new AppAuthentication({
+        ip: "a",
+        uuid: "b"
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "signature");
+
+    authenticator = new AppAuthentication({
+        ip: "a",
+        uuid: "b",
+        signature: "c"
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "application");
+
+    authenticator = new AppAuthentication({
+        ip: "a",
+        uuid: app.uuid,
+        signature: "c"
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "permission");
+
+    authenticator = new AppAuthentication({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: "c"
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "permission");
+
+    authenticator = new AppAuthentication({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({})
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "permission");
+
+    authenticator = new AppAuthentication({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({ip: "::1"})
+    });
+    params.populateAuthenticator(0, authenticator);
+    expect(await params.validate()).toBe(true);
+
+    authenticator = new AppAuthentication({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({ip: "::2"})
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "permission");
 });
 
 test("populateAuthenticator", () => {

@@ -20,7 +20,7 @@ beforeAll(async () => {
     await Api.init();
 
     app = new ExternalApplication({
-        name: "Api-test-global"
+        name: "Api-test-truncate"
     });
     await app.generateKeys();
     await app.save();

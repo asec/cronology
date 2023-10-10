@@ -19,7 +19,10 @@ class PingResponse extends ApiResponse
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "PingResponse")
+        {
+            this.setAll(params);
+        }
     }
 
     /**

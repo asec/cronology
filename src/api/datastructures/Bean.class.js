@@ -57,9 +57,7 @@ class Bean
      */
     toObject()
     {
-        let result = {...this};
-        delete result.attributesSet;
-        return result;
+        return {...this};
     }
 }
 
