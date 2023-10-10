@@ -95,7 +95,7 @@ test("parse", () => {
     expect(params.authentication).toStrictEqual({ ip: "127.0.0.1", uuid: "", signature: "" });
     expect(params.toObject()).toStrictEqual({});
 
-    req = mockRequest.createAuthenticationRequest();
+    req = mockRequest.createAuthenticationRequest("");
     params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
     expect(params.authentication).toStrictEqual({ ip: "", uuid: "", signature: "" });
@@ -126,6 +126,11 @@ test("validate", async () => {
      * @type {AppAuthenticationParameters}
      */
     let params = AppAuthenticationParameters.parse(req);
+    expect(params).toBeInstanceOf(AppAuthenticationParameters);
+    await expect(params.validate()).rejects.toThrow(DisplayableApiException);
+
+    req = mockRequest.createAuthenticationRequest("");
+    params = AppAuthenticationParameters.parse(req);
     expect(params).toBeInstanceOf(AppAuthenticationParameters);
     await expect(params.validate()).rejects.toThrow(DisplayableApiException);
 

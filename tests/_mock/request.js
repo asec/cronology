@@ -10,13 +10,30 @@ const httpMocks = require("node-mocks-http");
  */
 function createMockRequestParameters(ip, uuid, signature)
 {
-    return {
-        ip,
-        headers: {
-            "Crnlg-App": uuid,
-            "Crnlg-Signature": signature
+    let data = {};
+
+    if (typeof ip !== "undefined")
+    {
+        data.ip = ip;
+    }
+    if (typeof uuid !== "undefined")
+    {
+        if (!("headers" in data))
+        {
+            data.headers = {};
         }
-    };
+        data.headers["Crnlg-App"] = uuid;
+    }
+    if (typeof signature !== "undefined")
+    {
+        if (!("headers" in data))
+        {
+            data.headers = {};
+        }
+        data.headers["Crnlg-Signature"] = signature;
+    }
+
+    return data;
 }
 
 /**
@@ -44,7 +61,7 @@ function createMockAuthenticationRequest(ip, uuid, signature)
  * @param {{}} body
  * @returns {MockRequest<express.Request>}
  */
-function createMockFullAuthenticationRequest(method, endpoint, ip, uuid, signature, params = {}, body = {})
+function createMockFullRequest(method, endpoint, ip, uuid, signature, params = {}, body = {})
 {
     let requestDescriptor = createMockRequestParameters(ip, uuid, signature);
     /**
@@ -63,5 +80,5 @@ function createMockFullAuthenticationRequest(method, endpoint, ip, uuid, signatu
 
 module.exports = {
     createAuthenticationRequest: createMockAuthenticationRequest,
-    createFullAuthenticationRequest: createMockFullAuthenticationRequest
+    createFullRequest: createMockFullRequest
 };

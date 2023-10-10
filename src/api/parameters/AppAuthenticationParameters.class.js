@@ -6,10 +6,10 @@ const { ExternalApplicationRepository } = require("../../model/ExternalApplicati
 
 class AppAuthenticationParameters extends ApiRouteParameters
 {
-    static setupAuthentication()
-    {
-        this.addAuthentication(AppAuthentication);
-    }
+    static authentication = [
+        ...super.authentication,
+        AppAuthentication
+    ];
 
     /**
      * @returns {AppAuthenticationParameters}
@@ -21,6 +21,7 @@ class AppAuthenticationParameters extends ApiRouteParameters
 
     /**
      * @abstract
+     * @protected
      * @returns {Promise<boolean>}
      */
     async validateOwn() { return true; }

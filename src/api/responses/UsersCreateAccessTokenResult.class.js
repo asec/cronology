@@ -1,16 +1,10 @@
 "use strict";
 const { ApiResult } = require("./ApiResult.class");
-
-/**
- * @typedef {{}} UserAccessTokenBean
- * @property {string} username
- * @property {string} accessToken
- * @property {Date} accessTokenValid
- */
+const { UserAccessTokenBean } = require("../datastructures/UserAccessTokenBean.class");
 
 /**
  * @typedef {ApiResultBean} UserCreateAccessTokenResultBean
- * @property {UserAccessTokenBean} [result]
+ * @property {UserAccessTokenBeanProps} [result]
  */
 
 class UsersCreateAccessTokenResult extends ApiResult
@@ -26,7 +20,10 @@ class UsersCreateAccessTokenResult extends ApiResult
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "UsersCreateAccessTokenResult")
+        {
+            this.setAll(params);
+        }
     }
 
     /**
@@ -39,11 +36,30 @@ class UsersCreateAccessTokenResult extends ApiResult
     }
 
     /**
+     * @param {string} key
+     * @param {*} value
+     * @returns {boolean}
+     */
+    set(key, value)
+    {
+        if (key === "result")
+        {
+            value = new UserAccessTokenBean(value);
+        }
+
+        return super.set(key, value);
+    }
+
+    /**
      * @returns {UserCreateAccessTokenResultBean}
      */
     toObject()
     {
-        return super.toObject();
+        let result = (this.result instanceof UserAccessTokenBean) ? this.result.toObject() : null;
+        return {
+            success: this.success,
+            result
+        };
     }
 }
 

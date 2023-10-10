@@ -11,7 +11,10 @@ class Bean
      */
     constructor(props)
     {
-        this.setAll(props);
+        if (this.constructor.name === "Bean")
+        {
+            this.setAll(props);
+        }
     }
 
     /**
@@ -40,18 +43,23 @@ class Bean
         let success = true;
         for (let i in params)
         {
-            success = success && this.set(i, params[i]);
+            if (!this.set(i, params[i]))
+            {
+                success = false;
+            }
         }
 
         return success;
     }
 
     /**
-     * @returns {{}}
+     * @returns {BeanObject}
      */
     toObject()
     {
-        return {...this};
+        let result = {...this};
+        delete result.attributesSet;
+        return result;
     }
 }
 

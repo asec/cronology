@@ -51,7 +51,7 @@ function checkRouteFormat(routeData, method, route, parameterClass = undefined)
 test("getRoutes", () => {
     const packageInfo = require("../../../package.json");
     let routes = DefaultRoute.getRoutes();
-    expect(routes).toHaveLength(4);
+    expect(routes).toHaveLength(5);
 
     checkRoute(
         routes[0],

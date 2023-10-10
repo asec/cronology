@@ -19,7 +19,10 @@ class ApiResponse extends Bean
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "ApiResponse")
+        {
+            this.setAll(params);
+        }
     }
 
     /**

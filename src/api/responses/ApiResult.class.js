@@ -19,7 +19,10 @@ class ApiResult extends ApiResponse
     constructor(params)
     {
         super(params);
-        this.setAll(params);
+        if (this.constructor.name === "ApiResult")
+        {
+            this.setAll(params);
+        }
     }
 
     /**

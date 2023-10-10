@@ -4,6 +4,15 @@ const { test, expect } = require("@jest/globals");
 const { ApiRouteParameters } = require("../../../src/api/parameters/ApiRouteParameters.class");
 const { ApiAuthenticationBase } = require("../../../src/api/authentication/ApiAuthenticationBase.class");
 
+class TestAuthentication extends ApiAuthenticationBase
+{
+
+    async validate(params)
+    {
+        return false;
+    }
+}
+
 class TestTmp extends ApiRouteParameters
 {
     foo;
@@ -32,29 +41,20 @@ class AnotherTestTmp extends ApiRouteParameters
     foo;
     aaa;
 
+    static authentication = [
+        ...super.authentication,
+        TestAuthentication
+    ];
+
     constructor(params)
     {
         super(params);
         this.setAll(params);
     }
 
-    static setupAuthentication()
-    {
-        this.addAuthentication(TestAuthentication);
-    }
-
     async validateOwn()
     {
         return true;
-    }
-}
-
-class TestAuthentication extends ApiAuthenticationBase
-{
-
-    async validate(params)
-    {
-        return false;
     }
 }
 

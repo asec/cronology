@@ -48,7 +48,7 @@ test("constructor", () => {
 });
 
 test("parse", () => {
-    let req = mockRequest.createFullAuthenticationRequest(
+    let req = mockRequest.createFullRequest(
         "get",
         "/app/aaa",
         "::1",
@@ -79,7 +79,7 @@ test("validate", async () => {
     expect(params).toBeInstanceOf(AppRouteGetAppParameters);
     await expect(params.validate()).rejects.toThrow(DisplayableApiException);
 
-    req = mockRequest.createFullAuthenticationRequest(
+    req = mockRequest.createFullRequest(
         "get",
         "/app/" + app.uuid,
         "::1",
@@ -93,7 +93,7 @@ test("validate", async () => {
     expect(params).toBeInstanceOf(AppRouteGetAppParameters);
     expect(await params.validate()).toBe(true);
 
-    req = mockRequest.createFullAuthenticationRequest(
+    req = mockRequest.createFullRequest(
         "get",
         "/app/test",
         "::1",
@@ -107,7 +107,7 @@ test("validate", async () => {
     expect(params).toBeInstanceOf(AppRouteGetAppParameters);
     await expect(params.validate()).rejects.toThrow(DisplayableApiException);
 
-    req = mockRequest.createFullAuthenticationRequest(
+    req = mockRequest.createFullRequest(
         "get",
         "/app/" + 12,
         "::1",

@@ -54,7 +54,7 @@ async function parseParamsFromMockRequest(username, password, ip = null, uuid = 
     {
         delete requestData.password;
     }
-    let req = mockRequest.createFullAuthenticationRequest(
+    let req = mockRequest.createFullRequest(
         "put",
         "/user",
         ip || "::1",

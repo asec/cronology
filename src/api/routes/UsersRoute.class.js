@@ -70,11 +70,7 @@ class UsersRoute extends ApiRoute
 
         return new UsersCreateAccessTokenResult({
             success: true,
-            result: {
-                username: user.username,
-                accessToken: user.accessToken,
-                accessTokenValid: user.accessTokenValid
-            }
+            result: user.toObject()
         });
     }
 }

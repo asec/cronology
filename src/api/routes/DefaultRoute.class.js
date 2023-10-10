@@ -1,6 +1,9 @@
 "use strict";
 const { ApiRoute } = require("../ApiRoute.class");
-const { ApiResponse, PingResponse } = require("../responses");
+const { DefaultRouteSignatureParameters } = require("../parameters/DefaultRouteSignatureParameters.class");
+const { ApiResponse, PingResponse, DefaultSignatureResult } = require("../responses");
+const { ExternalApplicationRepository } = require("../../model/ExternalApplication");
+const { DisplayableApiException } = require("../../exception");
 
 class DefaultRoute extends ApiRoute
 {
@@ -13,6 +16,7 @@ class DefaultRoute extends ApiRoute
             this.addRoute("get", "/test-error", this.testError);
             this.addRoute("get", "/bad-response", this.badResponse);
             this.addRoute("delete", "/", this.truncate);
+            this.addRoute("post", "/signature", this.signature, DefaultRouteSignatureParameters);
         }
     }
 
@@ -51,6 +55,29 @@ class DefaultRoute extends ApiRoute
 
         return new ApiResponse({
             success: true
+        });
+    }
+
+    /**
+     * @param {DefaultRouteSignatureParameters} params
+     * @returns {Promise<DefaultSignatureResult>}
+     * @throws {DisplayableApiException}
+     */
+    static async signature(params)
+    {
+        let app = await ExternalApplicationRepository.findOne({
+            uuid: params.uuid
+        });
+        if (!app)
+        {
+            throw new DisplayableApiException("Invalid app uuid.");
+        }
+
+        let signature = await app.generateSignature(params.data);
+
+        return new DefaultSignatureResult({
+            success: true,
+            result: signature
         });
     }
 }

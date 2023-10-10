@@ -28,7 +28,6 @@ class ApiRouteParameters extends Bean
     {
         super(params);
         this.setAll(params);
-        this.constructor.setupAuthentication();
     }
 
     /**
@@ -38,24 +37,6 @@ class ApiRouteParameters extends Bean
     setAll(params)
     {
         return super.setAll(params);
-    }
-
-    /**
-     * @abstract
-     * @protected
-     */
-    static setupAuthentication() {}
-
-    /**
-     * @protected
-     * @param {typeof ApiAuthenticationBase} className
-     */
-    static addAuthentication(className)
-    {
-        if (this.authentication.indexOf(className) === -1)
-        {
-            this.authentication.push(className);
-        }
     }
 
     /**
