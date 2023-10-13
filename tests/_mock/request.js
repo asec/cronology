@@ -58,10 +58,11 @@ function createMockAuthenticationRequest(ip, uuid, signature)
  * @param {string} uuid
  * @param {string} signature
  * @param {{}} params
+ * @param {{}} query
  * @param {{}} body
  * @returns {MockRequest<express.Request>}
  */
-function createMockFullRequest(method, endpoint, ip, uuid, signature, params = {}, body = {})
+function createMockFullRequest(method, endpoint, ip, uuid, signature, params = {}, query = {}, body = {})
 {
     let requestDescriptor = createMockRequestParameters(ip, uuid, signature);
     /**
@@ -72,6 +73,7 @@ function createMockFullRequest(method, endpoint, ip, uuid, signature, params = {
         method,
         url: "https://localhost:7331" + endpoint,
         params,
+        query,
         body
     });
 

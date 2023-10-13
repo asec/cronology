@@ -61,6 +61,7 @@ async function parseParamsFromMockRequest(username, password, ip = null, uuid = 
         uuid || app.uuid,
         signature || await app.generateSignature({ ...requestData, ip: ip || "::1" }),
         {},
+        {},
         requestData
     );
 

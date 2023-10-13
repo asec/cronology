@@ -50,6 +50,7 @@ test("parse", () => {
         "test",
         "tst",
         {},
+        {},
         {
             user_id: "aaa"
         }
@@ -167,6 +168,7 @@ test("validate", async () => {
         app.uuid,
         await app.generateSignature({ ...data, ip: "::1"}),
         {},
+        {},
         data
     );
     params = UsersRouteCreateAccessTokenParameters.parse(req);
@@ -194,6 +196,7 @@ test("validate", async () => {
         app.uuid,
         await app.generateSignature({ ...data, ip: "::1"}),
         {},
+        {},
         data
     );
     params = UsersRouteCreateAccessTokenParameters.parse(req);
@@ -218,6 +221,7 @@ test("validate", async () => {
         "::1",
         app.uuid,
         await app.generateSignature({ ...data, ip: "::1"}),
+        {},
         {},
         data
     );
@@ -245,6 +249,7 @@ test("validate", async () => {
         "::1",
         app.uuid,
         await app.generateSignature({ ...data, ip: "::1" }),
+        {},
         {},
         data
     );

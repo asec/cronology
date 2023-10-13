@@ -6,6 +6,7 @@ const { UsersCreateUserResult } = require("./UsersCreateUserResult.class");
 const { PingResponse } = require("./PingResponse.class");
 const { UsersCreateAccessTokenResult } = require("./UsersCreateAccessTokenResult.class");
 const { DefaultSignatureResult } = require("./DefaultSignatureResult.class");
+const { ScheduleRouteScheduleResult } = require("./ScheduleRouteScheduleResult.class");
 
 module.exports = {
     ApiResponse,
@@ -15,4 +16,5 @@ module.exports = {
     PingResponse,
     UsersCreateAccessTokenResult,
     DefaultSignatureResult,
+    ScheduleRouteScheduleResult,
 };

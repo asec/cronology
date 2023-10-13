@@ -52,6 +52,7 @@ test("parse", () => {
         "test",
         undefined,
         {},
+        {},
         {
             foo: "bar",
             bar: "baz",
@@ -76,6 +77,7 @@ test("parse", () => {
         "::1",
         "test2",
         undefined,
+        {},
         {},
         {
             user_id: 12

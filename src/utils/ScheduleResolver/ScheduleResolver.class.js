@@ -101,7 +101,7 @@ class ScheduleResolver
 	 */
 	next()
 	{
-		return this.isRepeatable && this.#cronSchedule ? this.#cronSchedule.next() : this.#result;
+		return (this.isRepeatable && this.#cronSchedule) ? this.#cronSchedule.next() : this.#result;
 	}
 }
 

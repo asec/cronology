@@ -631,7 +631,7 @@ class DateBuilder
         this.#minute.next();
         this.#actualizeDate();
 
-        return this.#date;
+        return new Date(this.#date);
     }
 
     /**
@@ -647,7 +647,7 @@ class DateBuilder
         this.#minute.prev();
         this.#actualizeDate();
 
-        return this.#date;
+        return new Date(this.#date);
     }
 }
 

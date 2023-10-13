@@ -212,6 +212,20 @@ test("validate", async () => {
         uuid: "b"
     });
     params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "application");
+
+    authenticator = new AppAuthentication({
+        ip: "a",
+        uuid: app.uuid
+    });
+    params.populateAuthenticator(0, authenticator);
+    await tryAndExpectError(params, "permission");
+
+    authenticator = new AppAuthentication({
+        ip: "::1",
+        uuid: app.uuid
+    });
+    params.populateAuthenticator(0, authenticator);
     await tryAndExpectError(params, "signature");
 
     authenticator = new AppAuthentication({
