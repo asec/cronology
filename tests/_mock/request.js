@@ -60,11 +60,16 @@ function createMockAuthenticationRequest(ip, uuid, signature)
  * @param {{}} params
  * @param {{}} query
  * @param {{}} body
+ * @param {{}} headers
  * @returns {MockRequest<express.Request>}
  */
-function createMockFullRequest(method, endpoint, ip, uuid, signature, params = {}, query = {}, body = {})
+function createMockFullRequest(method, endpoint, ip, uuid, signature, params = {}, query = {}, body = {}, headers = {})
 {
     let requestDescriptor = createMockRequestParameters(ip, uuid, signature);
+    requestDescriptor.headers = {
+        ...requestDescriptor.headers || {},
+        ...headers
+    }
     /**
      * @type {MockRequest<express.Request>}
      */

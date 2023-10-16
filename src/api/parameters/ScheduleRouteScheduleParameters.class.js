@@ -1,7 +1,7 @@
 "use strict";
 const { ApiRouteParameters } = require("./ApiRouteParameters.class");
 const { DisplayableApiException } = require("../../exception");
-const { AppValidation } = require("../authentication");
+const { AppValidation, UserValidation } = require("../authentication");
 
 /**
  * @typedef {ApiRouteParameterBean} ScheduleRouteScheduleParametersBean
@@ -13,7 +13,8 @@ class ScheduleRouteScheduleParameters extends ApiRouteParameters
 {
     static authentication = [
         ...super.authentication,
-        AppValidation
+        AppValidation,
+        UserValidation
     ];
     /**
      * @type {string}

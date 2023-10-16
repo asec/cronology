@@ -2,10 +2,11 @@
 const env = require("../../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const { ScheduleRouteScheduleParameters } = require("../../../src/api/parameters");
-const { AppValidation } = require("../../../src/api/authentication");
+const { AppValidation, UserValidation } = require("../../../src/api/authentication");
 const { ApiException } = require("../../../src/exception");
 const { ExternalApplication } = require("../../../src/model/ExternalApplication");
 const { Log } = require("../../../src/model/Log");
+const { UserRepository } = require("../../entity/repository/User.repository");
 
 const db = require("../../db");
 const mockRequest = require("../../_mock/request");
@@ -14,6 +15,10 @@ const mockRequest = require("../../_mock/request");
  * @type {ExternalApplication}
  */
 let app;
+/**
+ * @type {User}
+ */
+let user;
 
 /**
  * @param {ScheduleRouteScheduleParameters} params
@@ -46,6 +51,10 @@ beforeAll(async () => {
     });
     await app.generateKeys();
     await app.save();
+
+    user = await UserRepository.createRandom();
+    user.createNewAccessToken();
+    await user.save();
 });
 
 afterAll(async () => {
@@ -119,7 +128,8 @@ test("parse", () => {
     expect(params).toBeInstanceOf(ScheduleRouteScheduleParameters);
     expect(params.authentication).toStrictEqual({
         ip: "127.0.0.1",
-        uuid: ""
+        uuid: "",
+        accessToken: ""
     });
     expect(params.toObject()).toStrictEqual({
         schedule: '',
@@ -144,7 +154,8 @@ test("parse", () => {
     expect(params).toBeInstanceOf(ScheduleRouteScheduleParameters);
     expect(params.authentication).toStrictEqual({
         ip: "127.0.0.1",
-        uuid: ""
+        uuid: "",
+        accessToken: ""
     });
     expect(params.toObject()).toStrictEqual({
         schedule: 'a',
@@ -166,7 +177,8 @@ test("parse", () => {
     expect(params).toBeInstanceOf(ScheduleRouteScheduleParameters);
     expect(params.authentication).toStrictEqual({
         ip: "127.0.0.1",
-        uuid: ""
+        uuid: "",
+        accessToken: ""
     });
     expect(params.toObject()).toStrictEqual({
         schedule: '',
@@ -189,7 +201,35 @@ test("parse", () => {
     expect(params).toBeInstanceOf(ScheduleRouteScheduleParameters);
     expect(params.authentication).toStrictEqual({
         ip: "127.0.0.1",
-        uuid: ""
+        uuid: "",
+        accessToken: ""
+    });
+    expect(params.toObject()).toStrictEqual({
+        schedule: 'now',
+        limit: 0
+    });
+
+    req = mockRequest.createFullRequest(
+        "post",
+        "/schedule",
+        "::1",
+        app.uuid,
+        undefined,
+        {},
+        undefined,
+        {
+            schedule: "now"
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
+        }
+    );
+    params = ScheduleRouteScheduleParameters.parse(req);
+    expect(params).toBeInstanceOf(ScheduleRouteScheduleParameters);
+    expect(params.authentication).toStrictEqual({
+        ip: "::1",
+        uuid: app.uuid,
+        accessToken: user.accessToken
     });
     expect(params.toObject()).toStrictEqual({
         schedule: 'now',
@@ -216,6 +256,22 @@ test("validate", async () => {
         undefined
     );
     params = ScheduleRouteScheduleParameters.parse(req);
+    await tryAndExpectError(params, "accessToken");
+
+    req = mockRequest.createFullRequest(
+        "post",
+        "/schedule",
+        undefined,
+        app.uuid,
+        undefined,
+        {},
+        {},
+        {},
+        {
+            "Crnlg-Access-Token": user.accessToken
+        }
+    );
+    params = ScheduleRouteScheduleParameters.parse(req);
     await tryAndExpectError(params, "schedule");
 
     req = mockRequest.createFullRequest(
@@ -228,6 +284,9 @@ test("validate", async () => {
         {},
         {
             schedule: "aa"
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -245,6 +304,9 @@ test("validate", async () => {
         },
         {
             schedule: "aa"
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -262,6 +324,9 @@ test("validate", async () => {
         },
         {
             schedule: "aa"
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -279,6 +344,9 @@ test("validate", async () => {
         },
         {
             schedule: "aa"
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -296,6 +364,9 @@ test("validate", async () => {
         },
         {
             schedule: "aa"
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -313,6 +384,9 @@ test("validate", async () => {
         },
         {
             schedule: "aa"
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -330,6 +404,9 @@ test("validate", async () => {
         },
         {
             schedule: ""
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -347,6 +424,9 @@ test("validate", async () => {
         },
         {
             schedule: null
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -364,6 +444,9 @@ test("validate", async () => {
         },
         {
             schedule: undefined
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -381,6 +464,9 @@ test("validate", async () => {
         },
         {
             schedule: new Date()
+        },
+        {
+            "Crnlg-Access-Token": user.accessToken
         }
     );
     params = ScheduleRouteScheduleParameters.parse(req);
@@ -391,100 +477,119 @@ test("validate (manual)", async () => {
     let params = new ScheduleRouteScheduleParameters({});
     await tryAndExpectError(params, "authenticators");
 
-    let authenticator = new AppValidation({
+    let appValidator = new AppValidation({
         ip: "::1",
         uuid: app.uuid
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    await tryAndExpectError(params, "authenticators");
+
+    let userValidator = new UserValidation({
+        accessToken: user.accessToken
+    });
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "schedule");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa"
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     expect(await params.validate()).toBe(true);
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: "bbb"
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "limit");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: "-1"
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "limit");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: -1
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "limit");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: 1000000
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "limit");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: new Date()
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "limit");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: (new Date()).toString()
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "limit");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: 0
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     expect(await params.validate()).toBe(true);
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "aa",
         limit: 1
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     expect(await params.validate()).toBe(true);
 
     params = new ScheduleRouteScheduleParameters({
         schedule: "",
         limit: 1
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "schedule");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: null,
         limit: 1
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "schedule");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: undefined,
         limit: 1
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "schedule");
 
     params = new ScheduleRouteScheduleParameters({
         schedule: new Date(),
         limit: 1
     });
-    params.populateAuthenticator(0, authenticator);
+    params.populateAuthenticator(0, appValidator);
+    params.populateAuthenticator(1, userValidator);
     await tryAndExpectError(params, "schedule");
 });

@@ -3,12 +3,22 @@ const env = require("../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const db = require("../db");
 const { Api } = require("../../src/api/Api.class");
-const { ApiError, ApiResult, PingResponse, ApiResponse, DefaultSignatureResult } = require("../../src/api/responses");
-const { DefaultRouteSignatureParameters, UsersRouteCreateAccessTokenParameters } = require("../../src/api/parameters");
+const {
+    ApiError,
+    ApiResult,
+    PingResponse,
+    DefaultSignatureResult,
+    ScheduleRouteScheduleResult
+} = require("../../src/api/responses");
+const {
+    DefaultRouteSignatureParameters,
+    UsersRouteCreateAccessTokenParameters,
+    ScheduleRouteScheduleParameters
+} = require("../../src/api/parameters");
 const { Log } = require("../../src/model/Log");
 const { ExternalApplication } = require("../../src/model/ExternalApplication");
 const { User } = require("../../src/model/User");
-const {UserRepository} = require("../entity/repository/User.repository");
+const { UserRepository } = require("../entity/repository/User.repository");
 
 /**
  * @type {ExternalApplication};
@@ -44,7 +54,7 @@ test("init", async () => {
 test("getRoutes", () => {
     let routes = Api.getRoutes();
     expect(routes.get).toHaveLength(4);
-    expect(routes.post).toHaveLength(2);
+    expect(routes.post).toHaveLength(3);
     expect(routes.put).toHaveLength(1);
     expect(routes.delete).toHaveLength(1);
 });
@@ -387,4 +397,126 @@ test("execute: UsersRoute::createAccessToken", async () => {
         username: user.username
     });
     expect(user.accessToken).toBe(prevAccessToken);
+});
+
+test("execute: ScheduleRoute::schedule", async () => {
+    let user = await UserRepository.createRandom();
+    user.createNewAccessToken();
+    await user.save();
+
+    /**
+     * @param {ScheduleRouteScheduleParameters} params
+     * @param errorToMatch
+     */
+    async function tryAndExpectError(params, errorToMatch)
+    {
+        let response = await Api.execute("post", "/schedule", params);
+        expect(response).toBeInstanceOf(ApiError);
+        expect(response.success).toBe(false);
+        expect(response.toObject().error).toMatch(errorToMatch);
+    }
+
+    /**
+     * @param params
+     * @returns {Promise<ScheduleRouteScheduleResult>}
+     */
+    async function tryAndExpectSuccess(params)
+    {
+        let now = new Date();
+        /**
+         * @type {ScheduleRouteScheduleResult}
+         */
+        let response = await Api.execute("post", "/schedule", params);
+        expect(response).toBeInstanceOf(ScheduleRouteScheduleResult);
+        expect(response.success).toBe(true);
+        expect(now.getTime() - response.now.getTime()).toBeLessThanOrEqual(100);
+
+        return response;
+    }
+
+    let params = new ScheduleRouteScheduleParameters({});
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: 12
+    });
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: ""
+    });
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: null
+    });
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: undefined
+    });
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: "test"
+    });
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: "now"
+    });
+    let response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(1);
+    expect(response.now.toString()).toBe(response.next[0].toString());
+
+    params.setAll({
+        schedule: "now",
+        limit: 5
+    });
+    response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(1);
+    expect(response.now.toString()).toBe(response.next[0].toString());
+
+    let correctDate = new Date(Date.UTC(2020, 0));
+    params.setAll({
+        schedule: "2020-01-01 00:00:00",
+        limit: 5
+    });
+    response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(1);
+    expect(response.next[0]).toStrictEqual(correctDate);
+
+    params.setAll({
+        schedule: "202-01-01 00:00:00",
+        limit: 20
+    });
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: "2020-01-01 00:0:00",
+        limit: 20
+    });
+    await tryAndExpectError(params, "schedule");
+
+    params.setAll({
+        schedule: "* * * * *"
+    });
+    response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(20);
+
+    params.setAll({
+        schedule: "* * * * *",
+        limit: 5
+    });
+    response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(5);
+    let last = new Date();
+    last.setSeconds(0, 0);
+    for (let i = 0; i < 5; i++)
+    {
+        let next = response.toObject().next[i];
+        expect(next).toBeInstanceOf(Date);
+        expect(next > last).toBe(true);
+        last = next;
+    }
 });

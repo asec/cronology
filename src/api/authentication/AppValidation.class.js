@@ -70,6 +70,10 @@ class AppValidation extends ApiAuthenticationBase
         });
     }
 
+    /**
+     * @param [params]
+     * @returns {Promise<boolean>}
+     */
     async validate(params)
     {
         if (typeof this.ip !== "string" || !this.ip)

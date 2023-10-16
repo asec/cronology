@@ -14,7 +14,7 @@ class ApiAuthenticationBase extends Bean
 
     /**
      * @abstract
-     * @param {{}} params
+     * @param {{}} [params]
      * @returns {Promise<boolean>}
      * @throws {ApiException}
      */
