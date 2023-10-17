@@ -2,4 +2,13 @@
 devel
 node_modules
 *.pem
+*.local.js
 .idea
+.env.local
+package-lock.json
+.env.test.local
+.env.console.local
+coverage
+logs
+logs-with-teardown
+app-keys
