@@ -1,5 +1,5 @@
 "use strict";
-const { Entity } = require("../Entity.class");
+const { Model } = require("../Model.class");
 const ExternalApplicationModel = require("./ExternalApplication.model");
 const mongoose = require("mongoose");
 
@@ -14,14 +14,14 @@ const crypto = require("crypto");
  * @property {string[]} [ip]
  */
 
-class ExternalApplication extends Entity
+class ExternalApplication extends Model
 {
     /**
      * @returns {mongoose.ObjectId}
      */
     get id()
     {
-        return this.entity._id;
+        return this.model._id;
     }
 
     /**
@@ -29,7 +29,7 @@ class ExternalApplication extends Entity
      */
     get name()
     {
-        return this.entity.get("name");
+        return this.model.get("name");
     }
 
     /**
@@ -37,7 +37,7 @@ class ExternalApplication extends Entity
      */
     set name(value)
     {
-        this.entity.set("name", value);
+        this.model.set("name", value);
     }
 
     /**
@@ -45,7 +45,7 @@ class ExternalApplication extends Entity
      */
     get uuid()
     {
-        return this.entity.get("uuid");
+        return this.model.get("uuid");
     }
 
     /**
@@ -53,7 +53,7 @@ class ExternalApplication extends Entity
      */
     set uuid(value)
     {
-        this.entity.set("uuid", value);
+        this.model.set("uuid", value);
     }
 
     /**
@@ -61,7 +61,7 @@ class ExternalApplication extends Entity
      */
     get ip()
     {
-        return this.entity.get("ip");
+        return this.model.get("ip");
     }
 
     /**
@@ -69,7 +69,7 @@ class ExternalApplication extends Entity
      */
     get created()
     {
-        return this.entity.get("created");
+        return this.model.get("created");
     }
 
     /**
@@ -77,7 +77,7 @@ class ExternalApplication extends Entity
      */
     get updated()
     {
-        return this.entity.get("updated");
+        return this.model.get("updated");
     }
 
     /**
@@ -97,7 +97,7 @@ class ExternalApplication extends Entity
      */
     generateUuid()
     {
-        return this.entity.generateUuid();
+        return this.model.generateUuid();
     }
 
     /**
@@ -106,7 +106,7 @@ class ExternalApplication extends Entity
      */
     addIp(ip)
     {
-        return this.entity.addIp(ip);
+        return this.model.addIp(ip);
     }
 
     /**
@@ -115,7 +115,7 @@ class ExternalApplication extends Entity
      */
     hasIp(ip)
     {
-        return this.entity.hasIp(ip);
+        return this.model.hasIp(ip);
     }
 
     /**
@@ -124,7 +124,7 @@ class ExternalApplication extends Entity
      */
     removeIp(ip)
     {
-        return this.entity.removeIp(ip);
+        return this.model.removeIp(ip);
     }
 
     /**

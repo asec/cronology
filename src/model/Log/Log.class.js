@@ -1,5 +1,5 @@
 "use strict";
-const { Entity } = require("../Entity.class");
+const { Model } = require("../Model.class");
 const LogModel = require("./Log.model");
 
 /**
@@ -9,14 +9,14 @@ const LogModel = require("./Log.model");
  * @property {Object} [data]
  */
 
-class Log extends Entity
+class Log extends Model
 {
     /**
      * @returns {mongoose.ObjectId}
      */
     get id()
     {
-        return this.entity._id;
+        return this.model._id;
     }
 
     /**
@@ -24,7 +24,7 @@ class Log extends Entity
      */
     get type()
     {
-        return this.entity.get("type");
+        return this.model.get("type");
     }
 
     /**
@@ -32,7 +32,7 @@ class Log extends Entity
      */
     get label()
     {
-        return this.entity.get("label");
+        return this.model.get("label");
     }
 
     /**
@@ -40,7 +40,7 @@ class Log extends Entity
      */
     get data()
     {
-        return this.entity.get("data");
+        return this.model.get("data");
     }
 
     /**
@@ -48,7 +48,7 @@ class Log extends Entity
      */
     get created()
     {
-        return this.entity.get("created");
+        return this.model.get("created");
     }
 
     /**

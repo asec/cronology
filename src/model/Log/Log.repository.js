@@ -1,5 +1,5 @@
 "use strict";
-const { EntityRepository } = require("../EntityRepository.class");
+const { ModelRepository } = require("../ModelRepository.class");
 const LogModel = require("./Log.model");
 const { Log } = require("./Log.class");
 
@@ -9,7 +9,7 @@ const { Log } = require("./Log.class");
  * @property {Date} [created]
  */
 
-class LogRepository extends EntityRepository
+class LogRepository extends ModelRepository
 {
     /**
      * @returns {LogModel}

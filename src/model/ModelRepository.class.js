@@ -1,9 +1,9 @@
 "use strict";
-const { Entity } = require("./Entity.class");
+const { Model } = require("./Model.class");
 const { DeleteResult } = require("mongodb");
 const mongoose = require("mongoose");
 
-class EntityRepository
+class ModelRepository
 {
     /**
      * @type {mongoose.Model}
@@ -63,14 +63,14 @@ class EntityRepository
     }
 
     /**
-     * @param {(Entity|Object)[]} docs
+     * @param {(Model|Object)[]} docs
      * @param {mongoose.InsertManyOptions & {lean: true}} [options]
      * @returns {Promise<Array<Require_id<Object>>>}
      */
     static insertMany(docs, options)
     {
         docs = docs.map(item => {
-            if (item instanceof Entity)
+            if (item instanceof Model)
             {
                 return item.toObject();
             }
@@ -81,5 +81,5 @@ class EntityRepository
 }
 
 module.exports = {
-    EntityRepository
+    ModelRepository
 };

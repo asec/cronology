@@ -1,44 +1,44 @@
 "use strict";
 const mongoose = require("mongoose");
 
-class Entity
+class Model
 {
     /**
      * @type {mongoose.Document}
      */
-    #entity = null;
+    #model = null;
 
     /**
      * @returns {number}
      */
     get __v()
     {
-        return this.#entity.__v;
+        return this.#model.__v;
     }
 
     /**
      * @returns {mongoose.Document}
      * @protected
      */
-    get entity()
+    get model()
     {
-        return this.#entity;
+        return this.#model;
     }
 
     /**
-     * @param {mongoose.Document} entity
+     * @param {mongoose.Document} model
      */
-    constructor(entity)
+    constructor(model)
     {
-        this.#setEntity(entity);
+        this.#setModel(model);
     }
 
     /**
-     * @param {mongoose.Document} entity
+     * @param {mongoose.Document} model
      */
-    #setEntity(entity)
+    #setModel(model)
     {
-        this.#entity = entity;
+        this.#model = model;
     }
 
     /**
@@ -48,7 +48,7 @@ class Entity
      */
     validate(pathsToValidate, options)
     {
-        return this.#entity.validate(pathsToValidate, options);
+        return this.#model.validate(pathsToValidate, options);
     }
 
     /**
@@ -57,7 +57,7 @@ class Entity
      */
     save(options = {})
     {
-        return this.#entity.save(options);
+        return this.#model.save(options);
     }
 
     /**
@@ -70,12 +70,12 @@ class Entity
      */
     populate(path, select, model, match, options)
     {
-        return this.#entity.populate(path, select, model, match, options);
+        return this.#model.populate(path, select, model, match, options);
     }
 
     toString()
     {
-        return this.#entity.toString();
+        return this.#model.toString();
     }
 
     /**
@@ -84,10 +84,10 @@ class Entity
      */
     toObject(options)
     {
-        return this.#entity.toObject(options);
+        return this.#model.toObject(options);
     }
 }
 
 module.exports = {
-    Entity
+    Model
 };

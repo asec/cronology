@@ -18,7 +18,7 @@ const {
 const { Log } = require("../../src/model/Log");
 const { ExternalApplication } = require("../../src/model/ExternalApplication");
 const { User } = require("../../src/model/User");
-const { UserRepository } = require("../entity/repository/User.repository");
+const { UserRepository } = require("../model/repository/User.repository");
 
 /**
  * @type {ExternalApplication};

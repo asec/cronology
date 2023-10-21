@@ -1,5 +1,5 @@
 "use strict";
-const { EntityRepository } = require("../EntityRepository.class");
+const { ModelRepository } = require("../ModelRepository.class");
 const ProjectModel = require("./Project.model");
 const { Project } = require("./Project.class");
 const mongoose = require("mongoose");
@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
  * @property {Date} [updated]
  */
 
-class ProjectRepository extends EntityRepository
+class ProjectRepository extends ModelRepository
 {
     static get model()
     {

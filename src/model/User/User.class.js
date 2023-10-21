@@ -1,5 +1,5 @@
 "use strict";
-const { Entity } = require("../Entity.class");
+const { Model } = require("../Model.class");
 const UserModel = require("./User.model");
 
 /**
@@ -12,14 +12,14 @@ const UserModel = require("./User.model");
  * @property {Date} [loginDate]
  */
 
-class User extends Entity
+class User extends Model
 {
 	/**
 	 * @returns {mongoose.ObjectId}
 	 */
 	get id()
 	{
-		return this.entity._id;
+		return this.model._id;
 	}
 
 	/**
@@ -27,7 +27,7 @@ class User extends Entity
 	 */
 	get username()
 	{
-		return this.entity.get("username");
+		return this.model.get("username");
 	}
 
 	/**
@@ -35,7 +35,7 @@ class User extends Entity
 	 */
 	set username(value)
 	{
-		this.entity.set("username", value);
+		this.model.set("username", value);
 	}
 
 	/**
@@ -43,7 +43,7 @@ class User extends Entity
 	 */
 	get password()
 	{
-		return this.entity.get("password");
+		return this.model.get("password");
 	}
 
 	/**
@@ -51,7 +51,7 @@ class User extends Entity
 	 */
 	set password(value)
 	{
-		this.entity.set("password", value);
+		this.model.set("password", value);
 	}
 
 	/**
@@ -59,7 +59,7 @@ class User extends Entity
 	 */
 	get plainPassword()
 	{
-		return this.entity.get("plainPassword");
+		return this.model.get("plainPassword");
 	}
 
 	/**
@@ -67,7 +67,7 @@ class User extends Entity
 	 */
 	set plainPassword(value)
 	{
-		this.entity.set("plainPassword", value);
+		this.model.set("plainPassword", value);
 	}
 
 	/**
@@ -75,7 +75,7 @@ class User extends Entity
 	 */
 	get isAdmin()
 	{
-		return this.entity.get("isAdmin");
+		return this.model.get("isAdmin");
 	}
 
 	/**
@@ -83,7 +83,7 @@ class User extends Entity
 	 */
 	set isAdmin(value)
 	{
-		this.entity.set("isAdmin", value);
+		this.model.set("isAdmin", value);
 	}
 
 	/**
@@ -91,7 +91,7 @@ class User extends Entity
 	 */
 	get accessToken()
 	{
-		return this.entity.get("accessToken");
+		return this.model.get("accessToken");
 	}
 
 	/**
@@ -99,7 +99,7 @@ class User extends Entity
 	 */
 	set accessToken(value)
 	{
-		this.entity.set("accessToken", value);
+		this.model.set("accessToken", value);
 	}
 
 	/**
@@ -107,7 +107,7 @@ class User extends Entity
 	 */
 	get accessTokenValid()
 	{
-		return this.entity.get("accessTokenValid");
+		return this.model.get("accessTokenValid");
 	}
 
 	/**
@@ -115,7 +115,7 @@ class User extends Entity
 	 */
 	set accessTokenValid(value)
 	{
-		this.entity.set("accessTokenValid", value);
+		this.model.set("accessTokenValid", value);
 	}
 
 	/**
@@ -123,7 +123,7 @@ class User extends Entity
 	 */
 	get loginDate()
 	{
-		return this.entity.get("loginDate");
+		return this.model.get("loginDate");
 	}
 
 	/**
@@ -131,7 +131,7 @@ class User extends Entity
 	 */
 	set loginDate(value)
 	{
-		this.entity.set("loginDate", value);
+		this.model.set("loginDate", value);
 	}
 
 	/**
@@ -139,7 +139,7 @@ class User extends Entity
 	 */
 	get created()
 	{
-		return this.entity.get("created");
+		return this.model.get("created");
 	}
 
 	/**
@@ -147,7 +147,7 @@ class User extends Entity
 	 */
 	get updated()
 	{
-		return this.entity.get("updated");
+		return this.model.get("updated");
 	}
 
 	/**
@@ -164,12 +164,12 @@ class User extends Entity
 	 */
 	checkPassword(rawPassword)
 	{
-		return this.entity.checkPassword(rawPassword);
+		return this.model.checkPassword(rawPassword);
 	}
 
 	createNewAccessToken()
 	{
-		return this.entity.createNewAccessToken();
+		return this.model.createNewAccessToken();
 	}
 
 	/**

@@ -1,5 +1,5 @@
 "use strict";
-const { Entity } = require("../Entity.class");
+const { Model } = require("../Model.class");
 const ProjectModel = require("./Project.model");
 const { User } = require("../User");
 const mongoose = require("mongoose");
@@ -11,14 +11,14 @@ const mongoose = require("mongoose");
  * @property {(User|mongoose.ObjectId)[]} [participants]
  */
 
-class Project extends Entity
+class Project extends Model
 {
     /**
      * @returns {mongoose.ObjectId}
      */
     get id()
     {
-        return this.entity._id;
+        return this.model._id;
     }
 
     /**
@@ -26,7 +26,7 @@ class Project extends Entity
      */
     get name()
     {
-        return this.entity.get("name");
+        return this.model.get("name");
     }
 
     /**
@@ -34,7 +34,7 @@ class Project extends Entity
      */
     set name(value)
     {
-        this.entity.set("name", value);
+        this.model.set("name", value);
     }
 
     /**
@@ -42,7 +42,7 @@ class Project extends Entity
      */
     get color()
     {
-        return this.entity.get("color");
+        return this.model.get("color");
     }
 
     /**
@@ -50,7 +50,7 @@ class Project extends Entity
      */
     set color(value)
     {
-        this.entity.set("color", value);
+        this.model.set("color", value);
     }
 
     /**
@@ -65,16 +65,16 @@ class Project extends Entity
     {
         try
         {
-            this.entity.$assertPopulated("participants");
+            this.model.$assertPopulated("participants");
         }
         catch (e)
         {
-            return this.entity.get("participants");
+            return this.model.get("participants");
         }
 
         if (!this.#populatedParticipants.length)
         {
-            this.#populatedParticipants = this.entity.get("participants").map(item => new User(item));
+            this.#populatedParticipants = this.model.get("participants").map(item => new User(item));
         }
 
         return this.#populatedParticipants;
@@ -85,7 +85,7 @@ class Project extends Entity
      */
     get created()
     {
-        return this.entity.get("created");
+        return this.model.get("created");
     }
 
     /**
@@ -93,7 +93,7 @@ class Project extends Entity
      */
     get updated()
     {
-        return this.entity.get("updated");
+        return this.model.get("updated");
     }
 
     /**
@@ -110,12 +110,12 @@ class Project extends Entity
      */
     addParticipant(users)
     {
-        return this.entity.addParticipant(users);
+        return this.model.addParticipant(users);
     }
 
     clearParticipants()
     {
-        this.entity.clearParticipants();
+        this.model.clearParticipants();
     }
 
     async populateAll()

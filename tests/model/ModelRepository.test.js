@@ -1,8 +1,8 @@
 require("../../config/dotenv").environment("test");
 const { test, expect } = require("@jest/globals");
-const { EntityRepository } = require("../../src/model/EntityRepository.class");
+const { ModelRepository } = require("../../src/model/ModelRepository.class");
 
-class IncompleteRepository extends EntityRepository
+class IncompleteRepository extends ModelRepository
 {
 
 }

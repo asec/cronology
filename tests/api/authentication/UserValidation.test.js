@@ -1,7 +1,7 @@
 const env = require("../../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const { UserValidation } = require("../../../src/api/authentication");
-const { UserRepository } = require("../../entity/repository/User.repository");
+const { UserRepository } = require("../../model/repository/User.repository");
 const { Log } = require("../../../src/model/Log");
 
 const mockRequest = require("../../_mock/request");

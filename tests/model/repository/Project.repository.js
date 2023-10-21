@@ -9,8 +9,8 @@ class ProjectRepositoryForTests extends ProjectRepository
     /**
      * @param {string} name
      * @param {(string|User)[]|User|number|null} [participants = null] - Can be an array of usernames, an array of User
-     * entities, a User entity, a number describing how many random User entities you'd like to add or null. If the
-     * value is null, the code will add one random user entity as a participant.
+     * entities, a User model, a number describing how many random User models you'd like to add or null. If the
+     * value is null, the code will add one random user model as a participant.
      * @param {string|null} [color = null]
      * @returns {Promise<Project>}
      */

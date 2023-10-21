@@ -6,7 +6,7 @@ const { AppValidation, UserValidation } = require("../../../src/api/authenticati
 const { ApiException } = require("../../../src/exception");
 const { ExternalApplication } = require("../../../src/model/ExternalApplication");
 const { Log } = require("../../../src/model/Log");
-const { UserRepository } = require("../../entity/repository/User.repository");
+const { UserRepository } = require("../../model/repository/User.repository");
 
 const db = require("../../db");
 const mockRequest = require("../../_mock/request");
