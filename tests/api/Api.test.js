@@ -519,4 +519,48 @@ test("execute: ScheduleRoute::schedule", async () => {
         expect(next > last).toBe(true);
         last = next;
     }
+
+    params.setAll({
+        schedule: "0 */6 31 9"
+    });
+    response = await tryAndExpectError(params, "schedule");
+
+    params.set("schedule", "5 5 29 2 *");
+    response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(5);
+    last = new Date();
+    last.setSeconds(0, 0);
+    for (let i = 0; i < 5; i++)
+    {
+        let next = response.toObject().next[i];
+        expect(next).toBeInstanceOf(Date);
+        expect(next > last).toBe(true);
+        last = next;
+    }
+
+    params.set("limit", 10);
+    response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(10);
+    last = new Date();
+    last.setSeconds(0, 0);
+    for (let i = 0; i < 10; i++)
+    {
+        let next = response.toObject().next[i];
+        expect(next).toBeInstanceOf(Date);
+        expect(next > last).toBe(true);
+        last = next;
+    }
+
+    params.set("limit", 0);
+    response = await tryAndExpectSuccess(params);
+    expect(response.next).toHaveLength(1);
+    last = new Date();
+    last.setSeconds(0, 0);
+    for (let i = 0; i < 1; i++)
+    {
+        let next = response.toObject().next[i];
+        expect(next).toBeInstanceOf(Date);
+        expect(next > last).toBe(true);
+        last = next;
+    }
 });
