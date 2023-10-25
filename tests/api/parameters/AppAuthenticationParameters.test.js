@@ -20,7 +20,9 @@ let app;
 beforeAll(async () => {
     env.enableSilentLogging();
     Log.setLogFile("AppAuthenticationParameters.test");
+    let section = await Log.startSection("AppAuthenticationParameters.test");
     await db.connect();
+    await section.save();
 
     app = new ExternalApplication({
         name: "AppAuthenticationParameters-test"
@@ -31,7 +33,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
     app.deleteKeys();
-    await db.tearDown();
+    //await db.tearDown();
 });
 
 test("constructor", () => {

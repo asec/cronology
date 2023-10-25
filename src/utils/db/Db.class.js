@@ -67,6 +67,7 @@ class Db
 
     async waitForBackgroundProcesses()
     {
+        //console.log(mongoose.mongo.);
         while (this.indicesLeftToCreate > 0)
         {
             await new Promise(resolve => setTimeout(resolve, 100));

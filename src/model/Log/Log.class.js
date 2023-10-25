@@ -4,6 +4,7 @@ const LogModel = require("./Log.model");
 
 /**
  * @typedef {Object} LogBean
+ * @property {string} section
  * @property {string} type
  * @property {string} label
  * @property {Object} [data]
@@ -60,6 +61,15 @@ class Log extends Model
     }
 
     /**
+     * @param [options]
+     * @returns {LogBean}
+     */
+    toObject(options)
+    {
+        return super.toObject(options);
+    }
+
+    /**
      * @returns {string}
      */
     static getLogFile()
@@ -84,11 +94,29 @@ class Log extends Model
     static async log(type, label, data = {})
     {
         let entity = await LogModel.log(type, label, data);
-        if (entity === false)
+        if (entity instanceof LogModel)
         {
-            return false;
+            return new Log(entity);
         }
-        return new Log(entity);
+
+        return entity;
+    }
+
+    /**
+     * @param {string} type
+     * @param {string} label
+     * @param {Object} [data = {}]
+     * @returns {false|Log}
+     */
+    static logToFile(type, label, data = {})
+    {
+        let entity = LogModel.logToFile(type, label, data);
+        if (entity instanceof LogModel)
+        {
+            return new Log(entity);
+        }
+
+        return entity;
     }
 
     /**
@@ -97,6 +125,35 @@ class Log extends Model
     static deleteFiles()
     {
         return LogModel.deleteFiles();
+    }
+
+    /**
+     * @param {string} name
+     * @returns {Promise<false|Log>}
+     */
+    static async startSection(name)
+    {
+        let entity = await LogModel.startSection(name);
+        if (entity instanceof LogModel)
+        {
+            return new Log(entity);
+        }
+
+        return entity;
+    }
+
+    static endSection()
+    {
+        LogModel.endSection();
+    }
+
+    /**
+     * @param {string} [file]
+     * @returns {Promise<number>}
+     */
+    static async pullFromFile(file = "")
+    {
+        return LogModel.pullFromFile(file);
     }
 }
 

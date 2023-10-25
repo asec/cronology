@@ -74,7 +74,7 @@ test("sanitizeDbObject", async () => {
 
     let log = await Log.log("test", "label");
     expect(response.sanitizeDbObject(log)).toStrictEqual({});
-    expect(response.sanitizeDbObject(log.toObject())).toStrictEqual({ type: "test", label: "label", id: String(log.id) });
+    expect(response.sanitizeDbObject(log.toObject())).toStrictEqual({ type: "test", label: "label", id: String(log.id), "section": "" });
 
     await db.connect();
 
@@ -84,6 +84,7 @@ test("sanitizeDbObject", async () => {
         type: "success",
         label: "Test message",
         id: String(log.id),
-        created: log.created
+        created: log.created,
+        section: ""
     });
 });

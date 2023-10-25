@@ -5,10 +5,6 @@ const db = require("../utils/db");
 const { ApiRoute } = require("./ApiRoute.class");
 const { ApiResponse } = require("./responses/ApiResponse.class");
 const { ApiError } = require("./responses/ApiError.class");
-/**
- * @type {Object.<string, ApiRoute>}
- */
-const apiRoutes = require("./routes");
 const { ApiRouteParameters } = require("./parameters/ApiRouteParameters.class");
 
 const { Log } = require("../model/Log");
@@ -36,6 +32,10 @@ class Api
      */
     static addAllRoutes()
     {
+        /**
+         * @type {Object.<string, ApiRoute>}
+         */
+        const apiRoutes = require("./routes");
         for (let routeClass in apiRoutes)
         {
             this.addRoutes(apiRoutes[routeClass]);

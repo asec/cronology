@@ -1,6 +1,7 @@
 "use strict";
+const { LoggedException } = require("./LoggedException.class");
 
-class ApiException extends Error
+class ApiException extends LoggedException
 {
     displayable = false;
 }

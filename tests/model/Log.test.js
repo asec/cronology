@@ -1,6 +1,6 @@
 "use strict";
 const env = require("../../config/dotenv").environment("test");
-const { test, expect, afterEach, afterAll } = require("@jest/globals");
+const { test, expect, afterEach, beforeAll } = require("@jest/globals");
 const { Log, LogRepository } = require("../../src/model/Log");
 const path = require("path");
 const fs = require("fs");
@@ -9,6 +9,10 @@ const mongoose = require("mongoose");
 
 process.env.CONF_LOG_DIR = "./tests/logs-with-teardown/";
 const logPath = path.resolve(process.env.CONF_LOG_DIR || "./tests/logs/");
+
+beforeAll(() => {
+    env.enableSilentLogging();
+});
 
 afterEach(async () => {
     if (db.getReadyState() !== 1)
@@ -42,6 +46,14 @@ function getLineCount(file)
             .on("error", reject)
         ;
     });
+}
+
+/**
+ * @returns {Promise<Log>}
+ */
+async function getLastLogLineFromDb()
+{
+    return new Log((await LogRepository.model.find({}).sort({ created: -1, _id: -1 }).limit(1))[0]);
 }
 
 test("log", async () => {
@@ -124,4 +136,51 @@ test("tearDown", async () => {
         files = fs.readdirSync(logPath);
         expect(files).not.toContain(logFileName);
     }
+});
+
+test("section / pullFromFile", async () => {
+    let section1 = await Log.startSection("test");
+    await db.connect();
+    await section1.save();
+    expect(section1).toBeInstanceOf(Log);
+    expect(typeof section1.toObject().section).toBe("string");
+    expect(section1.toObject().type).toBe("section");
+    expect(section1.toObject().label).toBe("test");
+
+    await Log.log("info", "test log line");
+    /**
+     * @type {LogBean[]}
+     */
+    let logs = await LogRepository.model.find({}).sort({ created: -1, _id: -1 });
+    for (let i = 0; i < logs.length; i++)
+    {
+        expect(logs[i].section).toBe(section1.toObject().section);
+    }
+
+    Log.endSection();
+    let log = await Log.log("test", "log line without section");
+    expect(log.toObject().section).toBe("");
+
+    let section2 = await Log.startSection("new section");
+    await Log.log("test", "new line into new section");
+    log = await getLastLogLineFromDb();
+    expect(log.toObject().section).not.toBe(section1.toObject().section);
+    expect(log.toObject().section).toBe(section2.toObject().section);
+    await Log.log("test", "second new line into new section");
+    log = await getLastLogLineFromDb();
+    expect(log.toObject().section).not.toBe(section1.toObject().section);
+    expect(log.toObject().section).toBe(section2.toObject().section);
+
+    let section3 = await Log.startSection("section 3");
+    await Log.log("test", "third section");
+    log = await getLastLogLineFromDb();
+    expect(log.toObject().section).not.toBe(section1.toObject().section);
+    expect(log.toObject().section).not.toBe(section2.toObject().section);
+    expect(log.toObject().section).toBe(section3.toObject().section);
+
+    const linesInDb = await LogRepository.countDocuments();
+    const linesInFile = await getLineCount(logPath + "/" + Log.getLogFile());
+    const linesPulled = await Log.pullFromFile();
+    expect(await LogRepository.countDocuments()).toBe(linesInDb + linesPulled);
+    expect(linesInFile).toBeGreaterThanOrEqual(linesPulled);
 });
