@@ -8,6 +8,7 @@ const { ConsoleEnvSetCommand } = require("./ConsoleEnvSetCommand.class");
 const { ConsoleEnvGetCommand } = require("./ConsoleEnvGetCommand.class");
 const { AppIpCommand } = require("./AppIpCommand.class");
 const { AppSignatureCommand } = require("./AppSignatureCommand.class");
+const { LogsPullCommand } = require("./LogsPullCommand.class");
 
 module.exports = {
     AppIpCommand,
@@ -17,6 +18,7 @@ module.exports = {
     CreateAdminCommand,
     CreateAppCommand,
     CreateUserCommand,
+    LogsPullCommand,
     ScheduleCommand,
     SetAdminCommand,
 };

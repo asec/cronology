@@ -18,6 +18,13 @@ class ConsoleEnvSetCommand extends ConsoleCommand
         ]
     ];
 
+    static envKeysToCopy = [
+        "APP_ENV",
+        "CONF_DB_URI",
+        "CONF_CRYPTO_APPKEYS",
+        "CONF_LOG_DIR",
+    ];
+
     static action(env)
     {
         let possibleValues = ["test", "dev", "prod"];
@@ -114,11 +121,13 @@ class ConsoleEnvSetCommand extends ConsoleCommand
      */
     static #extractVariablesFromCurrentEnv()
     {
-        return {
-            APP_ENV: process.env.APP_ENV,
-            CONF_DB_URI: process.env.CONF_DB_URI,
-            CONF_CRYPTO_APPKEYS: process.env.CONF_CRYPTO_APPKEYS
-        };
+        const keys = {};
+        for (let i = 0; i < this.envKeysToCopy.length; i++)
+        {
+            const key = this.envKeysToCopy[i];
+            keys[key] = process.env[key];
+        }
+        return keys;
     }
 
     /**

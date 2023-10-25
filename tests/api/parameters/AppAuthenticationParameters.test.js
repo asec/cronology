@@ -33,7 +33,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
     app.deleteKeys();
-    //await db.tearDown();
+    await db.tearDown();
 });
 
 test("constructor", () => {
