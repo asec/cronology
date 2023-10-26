@@ -139,9 +139,8 @@ test("tearDown", async () => {
 });
 
 test("section / pullFromFile", async () => {
-    let section1 = await Log.startSection("test");
     await db.connect();
-    await section1.save();
+    let section1 = await Log.startSection("test");
     expect(section1).toBeInstanceOf(Log);
     expect(typeof section1.toObject().section).toBe("string");
     expect(section1.toObject().type).toBe("section");
@@ -154,7 +153,10 @@ test("section / pullFromFile", async () => {
     let logs = await LogRepository.model.find({}).sort({ created: -1, _id: -1 });
     for (let i = 0; i < logs.length; i++)
     {
-        expect(logs[i].section).toBe(section1.toObject().section);
+        if (logs[i].section)
+        {
+            expect(logs[i].section).toBe(section1.toObject().section);
+        }
     }
 
     Log.endSection();

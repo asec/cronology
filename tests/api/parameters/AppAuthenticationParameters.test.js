@@ -20,9 +20,7 @@ let app;
 beforeAll(async () => {
     env.enableSilentLogging();
     Log.setLogFile("AppAuthenticationParameters.test");
-    let section = await Log.startSection("AppAuthenticationParameters.test");
     await db.connect();
-    await section.save();
 
     app = new ExternalApplication({
         name: "AppAuthenticationParameters-test"
@@ -281,7 +279,7 @@ test("validate", async () => {
 
 test("populateAuthenticator", () => {
     let params = new AppAuthenticationParameters({});
-    let authenticator = new AppAuthentication();
+    let authenticator = new AppAuthentication({});
     expect(() => params.populateAuthenticator(1, authenticator)).toThrow(ApiException);
     expect(() => params.populateAuthenticator(0, params)).toThrow(ApiException);
     expect(() => params.populateAuthenticator(0, authenticator)).not.toThrow();

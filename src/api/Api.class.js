@@ -1,6 +1,5 @@
 "use strict";
 const crypto = require("crypto");
-const db = require("../utils/db");
 
 const { ApiRoute } = require("./ApiRoute.class");
 const { ApiResponse } = require("./responses/ApiResponse.class");
@@ -8,6 +7,7 @@ const { ApiError } = require("./responses/ApiError.class");
 const { ApiRouteParameters } = require("./parameters/ApiRouteParameters.class");
 
 const { Log } = require("../model/Log");
+const { LoggedException } = require("../exception");
 
 class Api
 {
@@ -23,14 +23,14 @@ class Api
 
     static async init()
     {
-        await db.connect();
-        this.addAllRoutes();
+        await Log.startSection("api starts");
+        await this.addAllRoutes();
     }
 
     /**
      * @protected
      */
-    static addAllRoutes()
+    static async addAllRoutes()
     {
         /**
          * @type {Object.<string, ApiRoute>}
@@ -38,7 +38,7 @@ class Api
         const apiRoutes = require("./routes");
         for (let routeClass in apiRoutes)
         {
-            this.addRoutes(apiRoutes[routeClass]);
+            await this.addRoutes(apiRoutes[routeClass]);
         }
     }
 
@@ -46,12 +46,12 @@ class Api
      * @protected
      * @param {typeof ApiRoute} routeClass
      */
-    static addRoutes(routeClass)
+    static async addRoutes(routeClass)
     {
         let routes = routeClass.getRoutes();
         for (let i = 0; i < routes.length; i++)
         {
-            this.addRoute(routes[i], routeClass);
+            await this.addRoute(routes[i], routeClass);
         }
     }
 
@@ -59,22 +59,43 @@ class Api
      * @protected
      * @param {ApiRouteDescriptor} descriptor
      * @param {typeof ApiRoute} routeClass
-     * @throws {Error}
+     * @throws {LoggedException}
      */
-    static addRoute(descriptor, routeClass)
+    static async addRoute(descriptor, routeClass)
     {
+        await Log.log("info", "api", {
+            message: "adding route: '" + descriptor.method + " " + descriptor.route + "'",
+            data: {
+                className: routeClass.name,
+                method: descriptor.method,
+                route: descriptor.route,
+                parameterClass: descriptor.parameterClass ? descriptor.parameterClass.name : "",
+                action: descriptor.action.name
+            }
+        });
         if (this.hasRoute(descriptor.method, descriptor.route))
         {
-            throw new Error("Cannot add route because it already exists: '" + descriptor.method + " " + descriptor.route + "'");
+            throw new LoggedException("Cannot add route because it already exists:" +
+                " '" + descriptor.method + " " + descriptor.route + "'");
         }
 
         this.#routes[descriptor.method][descriptor.route] = {
             /**
              * @param {ApiRouteParameters} params
              * @returns {Promise<ApiResponse>}
-             * @throws {Error}
+             * @throws {LoggedException}
              */
             action: async (params) => {
+                await Log.log("info", "api", {
+                    message: "executing action",
+                    data: {
+                        method: descriptor.method,
+                        route: descriptor.route,
+                        parameterClass: descriptor.parameterClass ? descriptor.parameterClass.name : "",
+                        action: descriptor.action.name,
+                        params: params ? params.toObject() : {}
+                    }
+                });
                 if (descriptor.parameterClass && !(params instanceof descriptor.parameterClass))
                 {
                     let gotClassName = "";
@@ -90,7 +111,7 @@ class Api
                     {
                         gotClassName = params;
                     }
-                    throw new Error(
+                    throw new LoggedException(
                         "Invalid parameters type for route: '" + descriptor.method + " " + descriptor.route + "'." +
                         " Needs: " + descriptor.parameterClass.name + ", got: " + gotClassName + "."
                     );
@@ -107,14 +128,14 @@ class Api
      * @param {ApiRouteDescriptor} descriptor
      * @param {ApiRouteParameters} params
      * @returns {Promise<ApiResponse>}
-     * @throws {Error}
+     * @throws {LoggedException}
      */
     static async executeAction(action, descriptor, params = undefined)
     {
         let apiResponse = await action(params);
         if (!apiResponse || !(apiResponse instanceof ApiResponse))
         {
-            throw new Error(
+            throw new LoggedException(
                 "The API returned an invalid response for route: '" + descriptor.method +
                 " " + descriptor.route + "'."
             );
@@ -149,14 +170,14 @@ class Api
      * @param {ApiRouteParameters} [params]
      * @param {string} [requestId]
      * @returns {Promise<ApiResponse>}
-     * @throws {Error}
+     * @throws {LoggedException}
      */
     static async execute(method, route, params = undefined, requestId = undefined)
     {
         requestId = requestId || crypto.randomUUID();
         if (!this.hasRoute(method, route))
         {
-            throw new Error("API Execution fail: The given route is invalid: '" + method + " " + route + "'");
+            throw new LoggedException("API Execution fail: The given route is invalid: '" + method + " " + route + "'");
         }
 
         /**

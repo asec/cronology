@@ -186,6 +186,7 @@ const logSchema = new mongoose.Schema({
 		},
 
 		/**
+		 * Start a new log section. This call also opens up a db connection.
 		 * @memberOf LogModel
 		 * @param {string} name
 		 * @returns {Promise<false|LogModel>}
@@ -195,6 +196,9 @@ const logSchema = new mongoose.Schema({
 				id: crypto.randomUUID(),
 				name
 			};
+
+			const db = require("../../utils/db");
+			await db.connect();
 
 			return await this.log("section", name);
 		},

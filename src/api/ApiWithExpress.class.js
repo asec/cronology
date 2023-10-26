@@ -32,13 +32,12 @@ class ApiWithExpress
 
     static async init()
     {
+        await Api.init();
         const http = this.#createServer();
 
         http.listen(process.env.CONF_API_PORT, () => {
             Log.log("info", "api", {message: "Server started on " + process.env.CONF_API_PORT});
         });
-
-        await Api.init();
 
         let routes = Api.getRoutes();
         for (let method in routes)

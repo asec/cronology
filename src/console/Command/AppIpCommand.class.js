@@ -2,8 +2,9 @@
 const { ConsoleCommand } = require("../ConsoleCommand.class");
 const { ExternalApplicationRepository } = require("../../model/ExternalApplication");
 const { ApiError, ApiResult } = require("../../api/responses");
-const db = require("../../utils/db");
+
 const validator = require("validator");
+const db = require("../../utils/db");
 
 /**
  * @typedef {{}} AppIpCommandOptions
@@ -46,7 +47,8 @@ class AppIpCommand extends ConsoleCommand
         let app = await ExternalApplicationRepository.findOne({ name: appName });
         if (app === null)
         {
-            return this.#resultInError("Invalid parameter: 'app'. The following app does not exists: '" + appName + "'");
+            return await this.#resultInError("Invalid parameter: 'app'. The following app does not" +
+                " exists: '" + appName + "'");
         }
 
         if (options.add)
@@ -60,12 +62,10 @@ class AppIpCommand extends ConsoleCommand
              */
             catch (e)
             {
-                this.printLine(e.message);
-                let response = new ApiResult({
+                await this.#resultInResponseWithError(e, new ApiResult({
                     success: false,
                     result: app.ip
-                });
-                this.printLine(response.toObject());
+                }));
                 return;
             }
         }
@@ -81,12 +81,10 @@ class AppIpCommand extends ConsoleCommand
              */
             catch (e)
             {
-                this.printLine(e.message);
-                let response = new ApiResult({
+                await this.#resultInResponseWithError(e, new ApiResult({
                     success: false,
                     result: app.ip
-                });
-                this.printLine(response.toObject());
+                }));
                 return;
             }
         }
@@ -101,13 +99,23 @@ class AppIpCommand extends ConsoleCommand
     /**
      * @param {string} message
      */
-    static #resultInError(message)
+    static async #resultInError(message)
     {
         let error = new ApiError({
             error: message,
             displayable: true
         });
         this.printLine(error.toObject());
+    }
+
+    /**
+     * @param {Error} e
+     * @param {ApiResponse} response
+     */
+    static async #resultInResponseWithError(e, response)
+    {
+        this.printLine(e.message);
+        this.printLine(response.toObject());
     }
 
     /**

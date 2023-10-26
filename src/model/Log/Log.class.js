@@ -128,6 +128,7 @@ class Log extends Model
     }
 
     /**
+     * Start a new log section. This call also opens up a db connection.
      * @param {string} name
      * @returns {Promise<false|Log>}
      */
