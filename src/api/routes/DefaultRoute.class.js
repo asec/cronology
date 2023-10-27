@@ -1,6 +1,6 @@
 "use strict";
 const { ApiRoute } = require("../ApiRoute.class");
-const { DefaultRouteSignatureParameters } = require("../parameters/DefaultRouteSignatureParameters.class");
+const { DefaultRouteSignatureParameters, DefaultRouteWaitParameters } = require("../parameters");
 const { ApiResponse, PingResponse, DefaultSignatureResult } = require("../responses");
 const { ExternalApplicationRepository } = require("../../model/ExternalApplication");
 const { DisplayableApiException } = require("../../exception");
@@ -17,6 +17,7 @@ class DefaultRoute extends ApiRoute
             this.addRoute("get", "/bad-response", this.badResponse);
             this.addRoute("delete", "/", this.truncate);
             this.addRoute("post", "/signature", this.signature, DefaultRouteSignatureParameters);
+            this.addRoute("get", "/wait", this.wait, DefaultRouteWaitParameters);
         }
     }
 
@@ -78,6 +79,19 @@ class DefaultRoute extends ApiRoute
         return new DefaultSignatureResult({
             success: true,
             result: signature
+        });
+    }
+
+    /**
+     * @param {DefaultRouteWaitParameters} params
+     * @returns {Promise<ApiResponse>}
+     */
+    static async wait(params)
+    {
+        await new Promise(resolve => setTimeout(resolve, params.ms));
+
+        return new ApiResponse({
+            success: true
         });
     }
 }

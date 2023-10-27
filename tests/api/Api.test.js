@@ -13,7 +13,8 @@ const {
 const {
     DefaultRouteSignatureParameters,
     UsersRouteCreateAccessTokenParameters,
-    ScheduleRouteScheduleParameters
+    ScheduleRouteScheduleParameters,
+    DefaultRouteWaitParameters
 } = require("../../src/api/parameters");
 const { Log } = require("../../src/model/Log");
 const { ExternalApplication } = require("../../src/model/ExternalApplication");
@@ -53,7 +54,7 @@ test("init", async () => {
 
 test("getRoutes", () => {
     let routes = Api.getRoutes();
-    expect(routes.get).toHaveLength(4);
+    expect(routes.get).toHaveLength(5);
     expect(routes.post).toHaveLength(3);
     expect(routes.put).toHaveLength(1);
     expect(routes.delete).toHaveLength(1);
@@ -107,6 +108,14 @@ test("execute: DefaultRoute", async () => {
     params = new DefaultRouteSignatureParameters({});
     response = await Api.execute("post", "/signature", params);
     expect(response.error).toMatch("uuid");
+
+    params = new DefaultRouteWaitParameters({
+        ms: 0
+    });
+    response = await Api.execute("get", "/wait", params);
+    expect(response.toObject()).toStrictEqual({
+        success: true
+    });
 });
 
 test("execute: AppRoute::getAppByUuid", async () => {

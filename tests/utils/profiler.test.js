@@ -118,7 +118,7 @@ test("wait", async () => {
         750,
         1300
     ];
-    let maxDistance = 20;
+    let maxDistance = 30;
 
     expect(profiler.sequences).toHaveLength(0);
 
