@@ -66,15 +66,7 @@ class DefaultRoute extends ApiRoute
      */
     static async signature(params)
     {
-        let app = await ExternalApplicationRepository.findOne({
-            uuid: params.uuid
-        });
-        if (!app)
-        {
-            throw new DisplayableApiException("Invalid app uuid.");
-        }
-
-        let signature = await app.generateSignature(params.data);
+        let signature = await params.app.generateSignature(params.data);
 
         return new DefaultSignatureResult({
             success: true,

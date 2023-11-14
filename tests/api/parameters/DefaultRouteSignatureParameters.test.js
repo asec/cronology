@@ -1,20 +1,44 @@
 "use strict";
 const env = require("../../../config/dotenv").environment("test");
-const { test, expect } = require("@jest/globals");
+const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const { DefaultRouteSignatureParameters } = require("../../../src/api/parameters");
 const { DisplayableApiException } = require("../../../src/exception");
+const { Log } = require("../../../src/model/Log");
+const { ExternalApplication } = require("../../../src/model/ExternalApplication");
 
 const mockRequest = require("../../_mock/request");
+const db = require("../../db");
+
+/**
+ * @type {ExternalApplication}
+ */
+let app;
+
+beforeAll(async () => {
+    env.enableSilentLogging();
+    Log.setLogFile("DefaultRouteSignatureParameters.test");
+    await db.connect();
+
+    app = new ExternalApplication({
+        name: "DefaultRouteSignatureParameters-test"
+    });
+    await app.save();
+});
+
+afterAll(async () => {
+    app.deleteKeys();
+    await db.tearDown();
+});
 
 test("constructor", () => {
     let params = new DefaultRouteSignatureParameters({});
-    expect(params.toObject()).toStrictEqual({ uuid: "", data: {} });
+    expect(params.toObject()).toStrictEqual({ data: {} });
 
     params = new DefaultRouteSignatureParameters({
         uuid: "test",
         invalid: 12
     });
-    expect(params.toObject()).toStrictEqual({ uuid: "test", data: {} });
+    expect(params.toObject()).toStrictEqual({ data: {} });
 
     params = new DefaultRouteSignatureParameters({
         data: {
@@ -23,7 +47,6 @@ test("constructor", () => {
         }
     });
     expect(params.toObject()).toStrictEqual({
-        uuid: "",
         data: {
             foo: "bar",
             test: 42
@@ -37,7 +60,6 @@ test("constructor", () => {
         }
     });
     expect(params.toObject()).toStrictEqual({
-        uuid: "uuid",
         data: {
             data: "data"
         }
@@ -61,9 +83,11 @@ test("parse", () => {
     );
     let params = DefaultRouteSignatureParameters.parse(req);
     expect(params).toBeInstanceOf(DefaultRouteSignatureParameters);
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({
+    expect(params.authentication).toStrictEqual({
         uuid: "test",
+        ip: "::1"
+    });
+    expect(params.toObject()).toStrictEqual({
         data: {
             foo: "bar",
             bar: "baz",
@@ -85,9 +109,11 @@ test("parse", () => {
     );
     params = DefaultRouteSignatureParameters.parse(req);
     expect(params).toBeInstanceOf(DefaultRouteSignatureParameters);
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({
+    expect(params.authentication).toStrictEqual({
         uuid: "test2",
+        ip: "::1"
+    });
+    expect(params.toObject()).toStrictEqual({
         data: {
             user_id: 12,
             ip: "::1"
@@ -103,9 +129,11 @@ test("parse", () => {
     );
     params = DefaultRouteSignatureParameters.parse(req);
     expect(params).toBeInstanceOf(DefaultRouteSignatureParameters);
-    expect(params.authentication).toStrictEqual({});
-    expect(params.toObject()).toStrictEqual({
+    expect(params.authentication).toStrictEqual({
         uuid: "",
+        ip: "127.0.0.1"
+    });
+    expect(params.toObject()).toStrictEqual({
         data: {
             ip: "127.0.0.1"
         }
@@ -117,7 +145,7 @@ test("validate", async () => {
         "post",
         "/signature",
         "::1",
-        "test",
+        app.uuid,
         ""
     );
     let params = DefaultRouteSignatureParameters.parse(req);
@@ -147,9 +175,19 @@ test("validate", async () => {
         "post",
         "/signature",
         undefined,
-        "test",
+        app.uuid,
         undefined
     );
     params = DefaultRouteSignatureParameters.parse(req);
     expect(await params.validate()).toBe(true);
+
+    req = mockRequest.createFullRequest(
+        "post",
+        "/signature",
+        "::2",
+        app.uuid,
+        undefined
+    );
+    params = DefaultRouteSignatureParameters.parse(req);
+    await expect(() => params.validate()).rejects.toThrow(DisplayableApiException);
 });

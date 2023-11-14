@@ -1,23 +1,41 @@
 "use strict";
 const { ApiRouteParameters } = require("./ApiRouteParameters.class");
 const { DisplayableApiException } = require("../../exception");
+const { AppValidation } = require("../authentication");
 
 /**
  * @typedef {ApiRouteParameterBean} DefaultRouteSignatureParametersBean
- * @property {string} uuid
  * @property {{}} data
  */
 
 class DefaultRouteSignatureParameters extends ApiRouteParameters
 {
-    /**
-     * @type {string}
-     */
-    uuid = "";
+    static authentication = [
+        ...super.authentication,
+        AppValidation
+    ];
+
     /**
      * @type {{}}
      */
     data = {};
+
+    /**
+     * @returns ExternalApplication
+     */
+    get app()
+    {
+        if (!this.authenticators.length)
+        {
+            throw new DisplayableApiException("You need to populate the authenticators before you can access them.");
+        }
+        if (!this.authenticators[0].app)
+        {
+            throw new DisplayableApiException("The app could not be found in the following authenticator: 0.");
+        }
+
+        return this.authenticators[0].app;
+    }
 
     /**
      * @param {DefaultRouteSignatureParametersBean} params
@@ -55,21 +73,11 @@ class DefaultRouteSignatureParameters extends ApiRouteParameters
      */
     static parseOwn(request, result)
     {
-        result.uuid = request.header("crnlg-app") || "";
-        result.data = {...request.body, ip: request.body.ip || request.ip};
+        result.data = {...request.body, ip: request.body.ip || result.authentication.ip};
     }
 
-    /**
-     * @protected
-     * @returns {Promise<boolean>}
-     * @throws {DisplayableApiException}
-     */
     async validateOwn()
     {
-        if (!this.uuid || typeof this.uuid !== "string")
-        {
-            throw new DisplayableApiException("Invalid app uuid.");
-        }
         return true;
     }
 }

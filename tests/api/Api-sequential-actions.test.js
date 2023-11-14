@@ -5,7 +5,7 @@ const { ExternalApplication } = require("../../src/model/ExternalApplication");
 const { Log } = require("../../src/model/Log");
 const { Api } = require("../../src/api/Api.class");
 const { UsersRouteCreateAccessTokenParameters, UsersRouteCreateParameters, DefaultRouteSignatureParameters } = require("../../src/api/parameters");
-const { AppAuthentication } = require("../../src/api/authentication");
+const { AppAuthentication, AppValidation} = require("../../src/api/authentication");
 
 const db = require("../db");
 
@@ -38,9 +38,13 @@ test("process", async () => {
         username: "testuser"
     };
     let params = new DefaultRouteSignatureParameters({
-        uuid: app.uuid,
         data: {...paramsBean, ip: "::1"}
     });
+    let authenticator = new AppValidation({
+        uuid: app.uuid,
+        ip: "::1"
+    });
+    params.populateAuthenticator(0, authenticator);
     expect(await params.validate()).toBe(true);
 
     let result = await Api.execute("post", "/signature", params);
@@ -49,7 +53,7 @@ test("process", async () => {
     expect(result.result.length).toBeGreaterThan(10);
 
     params = new UsersRouteCreateParameters(paramsBean);
-    let authenticator = new AppAuthentication({
+    authenticator = new AppAuthentication({
         ip: "::1",
         uuid: app.uuid,
         signature: result.result
@@ -71,9 +75,13 @@ test("process", async () => {
         user_id
     };
     params = new DefaultRouteSignatureParameters({
-        uuid: app.uuid,
         data: {...paramsBean, ip: "::1"}
     });
+    authenticator = new AppValidation({
+        uuid: app.uuid,
+        ip: "::1"
+    });
+    params.populateAuthenticator(0, authenticator);
     expect(await params.validate()).toBe(true);
     result = await Api.execute("post", "/signature", params);
     expect(result.success).toBe(true);

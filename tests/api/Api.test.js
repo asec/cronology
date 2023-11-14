@@ -20,6 +20,7 @@ const { Log } = require("../../src/model/Log");
 const { ExternalApplication } = require("../../src/model/ExternalApplication");
 const { User } = require("../../src/model/User");
 const { UserRepository } = require("../model/repository/User.repository");
+const {AppValidation} = require("../../src/api/authentication");
 
 /**
  * @type {ExternalApplication};
@@ -87,9 +88,14 @@ test("execute: DefaultRoute", async () => {
         foo: "bar"
     };
     let params = new DefaultRouteSignatureParameters({
-        uuid: app.uuid,
         data: signatureData
     });
+    let authenticator = new AppValidation({
+        uuid: app.uuid,
+        ip: "::1"
+    });
+    params.populateAuthenticator(0, authenticator);
+    await authenticator.validate();
     response = await Api.execute("post", "/signature", params);
     expect(response).toBeInstanceOf(DefaultSignatureResult);
     expect(response.success).toBe(true);
@@ -103,11 +109,20 @@ test("execute: DefaultRoute", async () => {
     });
     response = await Api.execute("post", "/signature", params);
     expect(response).toBeInstanceOf(ApiError);
-    expect(response.error).toMatch("uuid");
+    expect(response.error).toMatch("populate");
+
+    authenticator = new AppValidation({
+        uuid: "test",
+        ip: "::1"
+    });
+    params.populateAuthenticator(0, authenticator);
+    response = await Api.execute("post", "/signature", params);
+    expect(response).toBeInstanceOf(ApiError);
+    expect(response.error).toMatch("app could not be found");
 
     params = new DefaultRouteSignatureParameters({});
     response = await Api.execute("post", "/signature", params);
-    expect(response.error).toMatch("uuid");
+    expect(response.error).toMatch("populate");
 
     params = new DefaultRouteWaitParameters({
         ms: 0
