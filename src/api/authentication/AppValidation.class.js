@@ -24,6 +24,9 @@ class AppValidation extends ApiAuthenticationBase
      */
     #app = null;
 
+    /**
+     * @returns {ExternalApplication}
+     */
     get app()
     {
         return this.#app;

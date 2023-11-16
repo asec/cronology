@@ -8,19 +8,21 @@ const {
     ApiResult,
     PingResponse,
     DefaultSignatureResult,
-    ScheduleRouteScheduleResult
+    ScheduleRouteScheduleResult,
+    UsersCreateUserResult
 } = require("../../src/api/responses");
 const {
     DefaultRouteSignatureParameters,
     UsersRouteCreateAccessTokenParameters,
     ScheduleRouteScheduleParameters,
-    DefaultRouteWaitParameters
+    DefaultRouteWaitParameters,
+    UsersRouteGetParameters
 } = require("../../src/api/parameters");
 const { Log } = require("../../src/model/Log");
 const { ExternalApplication } = require("../../src/model/ExternalApplication");
 const { User } = require("../../src/model/User");
 const { UserRepository } = require("../model/repository/User.repository");
-const {AppValidation} = require("../../src/api/authentication");
+const { AppValidation, MixedAuthentication, UserValidation, AppAuthentication} = require("../../src/api/authentication");
 
 /**
  * @type {ExternalApplication};
@@ -55,7 +57,7 @@ test("init", async () => {
 
 test("getRoutes", () => {
     let routes = Api.getRoutes();
-    expect(routes.get).toHaveLength(5);
+    expect(routes.get).toHaveLength(6);
     expect(routes.post).toHaveLength(3);
     expect(routes.put).toHaveLength(1);
     expect(routes.delete).toHaveLength(1);
@@ -421,6 +423,242 @@ test("execute: UsersRoute::createAccessToken", async () => {
         username: user.username
     });
     expect(user.accessToken).toBe(prevAccessToken);
+});
+
+test("execute: Usersroute::getUserData", async () => {
+    let user = await UserRepository.createRandom();
+    let user2 = await UserRepository.createRandom();
+
+    /**
+     * @param {UsersRouteGetParameters} params
+     * @param {string} errorToMatch
+     * @param {boolean} [validate]
+     * @returns {Promise<void>}
+     */
+    async function tryAndExpectError(params, errorToMatch, validate = false)
+    {
+        if (validate)
+        {
+            expect(await params.validate()).toBe(true);
+        }
+        let response = await Api.execute("get", "/user", params);
+        expect(response).toBeInstanceOf(ApiError);
+        expect(response.error).toMatch(errorToMatch);
+    }
+
+    /**
+     * @param {UsersRouteGetParameters} params
+     * @param {boolean} [validate]
+     * @returns {Promise<UsersCreateUserResult>}
+     */
+    async function tryAndExpectSuccess(params, validate = false)
+    {
+        if (validate)
+        {
+            expect(await params.validate()).toBe(true);
+        }
+
+        let response = await Api.execute("get", "/user", params);
+        expect(response).toBeInstanceOf(UsersCreateUserResult);
+
+        return response;
+    }
+
+    /**
+     * @param {UsersRouteGetParameters} params
+     * @param {string} errorToMatch
+     * @returns {Promise<void>}
+     */
+    async function tryAndExpectValidationError(params, errorToMatch)
+    {
+        await expect(params.validate()).rejects.toThrow(errorToMatch);
+    }
+
+    let params = new UsersRouteGetParameters({});
+    await tryAndExpectError(params, "populate");
+
+    let auth = new MixedAuthentication({
+        appValidation: new AppValidation({})
+    });
+    params.populateAuthenticator(0, auth);
+    await tryAndExpectValidationError(params, "read properties of null");
+    await tryAndExpectError(params, "user could not be found");
+
+    auth.setAll({
+        userValidation: new UserValidation({})
+    });
+    await tryAndExpectValidationError(params, "invalid IP");
+    await tryAndExpectError(params, "user could not be found");
+
+    auth.setAll({
+        appValidation: new AppValidation({
+            ip: "::1"
+        })
+    });
+    await tryAndExpectValidationError(params, "invalid application");
+    await tryAndExpectError(params, "user could not be found");
+
+    auth.setAll({
+        appValidation: new AppValidation({
+            ip: "::1",
+            uuid: app.uuid
+        })
+    });
+    await tryAndExpectValidationError(params, "accessToken");
+    await tryAndExpectError(params, "user could not be found");
+
+    auth.setAll({
+        userValidation: new UserValidation({})
+    });
+    await tryAndExpectValidationError(params, "accessToken");
+    await tryAndExpectError(params, "user could not be found");
+
+    auth.userValidation.setAll({
+        accessToken: "accessToken"
+    });
+    await tryAndExpectValidationError(params, "user could not be found");
+    await tryAndExpectError(params, "user could not be found");
+
+    auth.userValidation.setAll({
+        accessToken: user.accessToken
+    });
+    await tryAndExpectError(params, "user could not be found");
+
+    let response = await tryAndExpectSuccess(params, true);
+    expect(response.result.username).toBe(user.username);
+
+    auth = new MixedAuthentication({
+        appAuthentication: new AppAuthentication({})
+    });
+    params.populateAuthenticator(0, auth);
+    await tryAndExpectValidationError(params, "invalid IP");
+    await tryAndExpectError(params, "user could not be found");
+
+    params.setAll({
+        username: ""
+    });
+    await tryAndExpectValidationError(params, "invalid IP");
+    await tryAndExpectError(params, "username");
+
+    params.setAll({
+        username: "teszt"
+    });
+    await tryAndExpectValidationError(params, "invalid IP");
+    await tryAndExpectError(params, "username");
+
+    params.setAll({
+        username: user.username
+    });
+    await tryAndExpectValidationError(params, "invalid IP");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1"
+    });
+    await tryAndExpectValidationError(params, "invalid application");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: "aaa"
+    });
+    await tryAndExpectValidationError(params, "invalid application");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: app.uuid
+    });
+    await tryAndExpectValidationError(params, "invalid signature");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: "test"
+    });
+    await tryAndExpectValidationError(params, "permission");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({})
+    });
+    await tryAndExpectValidationError(params, "permission");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({
+            username: "test"
+        })
+    });
+    await tryAndExpectValidationError(params, "permission");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({
+            username: user.username
+        })
+    });
+    await tryAndExpectValidationError(params, "permission");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({
+            username: user.username,
+            ip: "127.0.0.1"
+        })
+    });
+    await tryAndExpectValidationError(params, "permission");
+    await tryAndExpectSuccess(params);
+
+    auth.appAuthentication.setAll({
+        ip: "::1",
+        uuid: app.uuid,
+        signature: await app.generateSignature({
+            username: user.username,
+            ip: "::1"
+        })
+    });
+    await tryAndExpectSuccess(params, true);
+
+    params = new UsersRouteGetParameters({
+        username: user2.username
+    });
+    await tryAndExpectSuccess(params);
+
+    auth = new MixedAuthentication({
+        appValidation: new AppValidation({
+            ip: "::1",
+            uuid: app.uuid
+        }),
+        userValidation: new UserValidation({
+            accessToken: user.accessToken
+        }),
+        appAuthentication: new AppAuthentication({
+            ip: "::1",
+            uuid: app.uuid,
+            signature: app.generateSignature({
+                username: user2.username,
+                ip: "::1"
+            })
+        })
+    });
+    params.populateAuthenticator(0, auth);
+    response = await tryAndExpectSuccess(params, true);
+    expect(response.result.username).toBe(user2.username);
+
+    params = new UsersRouteGetParameters({});
+    params.populateAuthenticator(0, auth);
+    response = await tryAndExpectSuccess(params, true);
+    expect(response.result.username).toBe(user.username);
 });
 
 test("execute: ScheduleRoute::schedule", async () => {

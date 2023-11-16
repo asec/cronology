@@ -20,7 +20,6 @@ class UserValidation extends ApiAuthenticationBase
     #user = null;
 
     /**
-     * @protected
      * @returns {User}
      */
     get user()

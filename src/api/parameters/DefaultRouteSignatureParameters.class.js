@@ -21,7 +21,7 @@ class DefaultRouteSignatureParameters extends ApiRouteParameters
     data = {};
 
     /**
-     * @returns ExternalApplication
+     * @returns {ExternalApplication}
      */
     get app()
     {
@@ -29,12 +29,16 @@ class DefaultRouteSignatureParameters extends ApiRouteParameters
         {
             throw new DisplayableApiException("You need to populate the authenticators before you can access them.");
         }
-        if (!this.authenticators[0].app)
+        /**
+         * @type {AppValidation}
+         */
+        const authenticator = this.authenticators[0];
+        if (!authenticator.app)
         {
             throw new DisplayableApiException("The app could not be found in the following authenticator: 0.");
         }
 
-        return this.authenticators[0].app;
+        return authenticator.app;
     }
 
     /**

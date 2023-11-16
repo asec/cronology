@@ -1,9 +1,12 @@
 "use strict";
 const { ApiRoute } = require("../ApiRoute.class");
-const { UsersRouteCreateParameters } = require("../parameters/UsersRouteCreateParameters.class");
-const { UsersRouteCreateAccessTokenParameters } = require("../parameters/UsersRouteCreateAccessTokenParameters.class");
+const {
+    UsersRouteCreateParameters,
+    UsersRouteCreateAccessTokenParameters,
+    UsersRouteGetParameters
+} = require("../parameters");
 const { User, UserRepository } = require("../../model/User");
-const { UsersCreateUserResult, UsersCreateAccessTokenResult } = require("../responses");
+const { UsersCreateUserResult, UsersCreateAccessTokenResult, ApiResult } = require("../responses");
 const { DisplayableApiException } = require("../../exception");
 
 class UsersRoute extends ApiRoute
@@ -17,6 +20,7 @@ class UsersRoute extends ApiRoute
             this.createAccessToken,
             UsersRouteCreateAccessTokenParameters
         );
+        this.addRoute("get", "/user", this.getUserData, UsersRouteGetParameters);
     }
 
     /**
@@ -69,6 +73,37 @@ class UsersRoute extends ApiRoute
         await user.save();
 
         return new UsersCreateAccessTokenResult({
+            success: true,
+            result: user.toObject()
+        });
+    }
+
+    /**
+     * @param {UsersRouteGetParameters} params
+     * @returns {Promise<UsersCreateUserResult>}
+     */
+    static async getUserData(params)
+    {
+        /**
+         * @type {User|null}
+         */
+        let user = null;
+        if (params.username !== null)
+        {
+            user = await UserRepository.findOne({
+                username: params.username
+            });
+            if (!user)
+            {
+                throw new DisplayableApiException("Invalid parameter: 'username'. The user could not be found.");
+            }
+        }
+        else
+        {
+            user = params.user;
+        }
+
+        return new UsersCreateUserResult({
             success: true,
             result: user.toObject()
         });

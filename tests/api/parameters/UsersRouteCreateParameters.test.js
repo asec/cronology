@@ -8,7 +8,6 @@ const { DisplayableApiException } = require("../../../src/exception");
 const db = require("../../db");
 
 const mockRequest = require("../../_mock/request")
-const {AppRouteGetAppParameters} = require("../../../src/api/parameters/AppRouteGetAppParameters.class");
 
 /**
  * @type {ExternalApplication}

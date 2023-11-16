@@ -9,10 +9,16 @@ class UserRepositoryForTests extends UserRepository
 
     static async createAll()
     {
+        let tokenValid = new Date();
+        tokenValid.setTime(
+            tokenValid.getTime() + process.env.CONF_API_USERSESSION_LENGTH * 1000 * 60
+        );
         let users = this.usernames.map(username => {
             return {
                 username,
-                password: User.generateRandomPassword()
+                password: User.generateRandomPassword(),
+                accessToken: User.generateAccessToken(),
+                accessTokenValid: tokenValid
             };
         });
 
@@ -96,6 +102,7 @@ class UserRepositoryForTests extends UserRepository
     static mock(username, withPassword = false)
     {
         let user = new User({ username });
+        user.createNewAccessToken();
         if (typeof withPassword === "string")
         {
             user.password = withPassword;
