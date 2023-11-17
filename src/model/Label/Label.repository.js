@@ -1,26 +1,26 @@
 "use strict";
 const { ModelRepository } = require("../ModelRepository.class");
-const ProjectModel = require("./Project.model");
-const { Project } = require("./Project.class");
+const LabelModel = require("./Label.model");
+const { Label } = require("./Label.class");
 const mongoose = require("mongoose");
 
 /**
- * @typedef {ProjectBean} ProjectBeanSearch
+ * @typedef {LabelBean} LabelBeanSearch
  * @property {string} [id]
  * @property {Date} [created]
  * @property {Date} [updated]
  */
 
-class ProjectRepository extends ModelRepository
+class LabelRepository extends ModelRepository
 {
     static get model()
     {
-        return ProjectModel;
+        return LabelModel;
     }
 
     /**
-     * @param {mongoose.FilterQuery<ProjectBeanSearch>|undefined} [filter]
-     * @param {mongoose.QueryOptions<ProjectBeanSearch>} [options]
+     * @param {mongoose.FilterQuery<LabelBeanSearch>|undefined} [filter]
+     * @param {mongoose.QueryOptions<LabelBeanSearch>} [options]
      */
     static deleteMany(filter, options)
     {
@@ -28,8 +28,8 @@ class ProjectRepository extends ModelRepository
     }
 
     /**
-     * @param {mongoose.FilterQuery<ProjectBeanSearch>} [filter]
-     * @param {mongoose.QueryOptions<ProjectBeanSearch>} [options]
+     * @param {mongoose.FilterQuery<LabelBeanSearch>} [filter]
+     * @param {mongoose.QueryOptions<LabelBeanSearch>} [options]
      * @returns {Promise<Number>}
      */
     static countDocuments(filter, options)
@@ -38,25 +38,25 @@ class ProjectRepository extends ModelRepository
     }
 
     /**
-     * @param {mongoose.FilterQuery<ProjectBeanSearch>} [filter]
-     * @param {mongoose.ProjectionType<ProjectBeanSearch>|null} [projection]
-     * @param {mongoose.QueryOptions<ProjectBeanSearch>|null} [options]
-     * @returns {Promise<Project|null>}
+     * @param {mongoose.FilterQuery<LabelBeanSearch>} [filter]
+     * @param {mongoose.ProjectionType<LabelBeanSearch>|null} [projection]
+     * @param {mongoose.QueryOptions<LabelBeanSearch>|null} [options]
+     * @returns {Promise<Label|null>}
      */
     static async findOne(filter, projection = null, options = null)
     {
         let entity = await super.findOne(filter, projection, options);
         if (entity !== null)
         {
-            return new Project(entity);
+            return new Label(entity);
         }
 
         return null;
     }
 
     /**
-     * @param {mongoose.FilterQuery<ProjectBeanSearch>} [filter]
-     * @param {mongoose.QueryOptions<ProjectBeanSearch>} [options]
+     * @param {mongoose.FilterQuery<LabelBeanSearch>} [filter]
+     * @param {mongoose.QueryOptions<LabelBeanSearch>} [options]
      */
     static deleteOne(filter, options)
     {
@@ -64,9 +64,9 @@ class ProjectRepository extends ModelRepository
     }
 
     /**
-     * @param {(Project|ProjectBean)[]} docs
+     * @param {(Label|LabelBean)[]} docs
      * @param {mongoose.InsertManyOptions & {lean: true}} [options]
-     * @returns {Promise<Array<Require_id<ProjectBean>>>}
+     * @returns {Promise<Array<Require_id<LabelBean>>>}
      */
     static insertMany(docs, options)
     {
@@ -75,5 +75,5 @@ class ProjectRepository extends ModelRepository
 }
 
 module.exports = {
-    ProjectRepository
+    LabelRepository
 };

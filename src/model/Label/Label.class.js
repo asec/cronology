@@ -1,17 +1,17 @@
 "use strict";
 const { Model } = require("../Model.class");
-const ProjectModel = require("./Project.model");
+const LabelModel = require("./Label.model");
 const { User } = require("../User");
 const mongoose = require("mongoose");
 
 /**
- * @typedef {Object} ProjectBean
+ * @typedef {Object} LabelBean
  * @property {string} name
  * @property {string} [color]
- * @property {(User|mongoose.ObjectId)[]} [participants]
+ * @property {(User|mongoose.ObjectId)[]} [owners]
  */
 
-class Project extends Model
+class Label extends Model
 {
     /**
      * @returns {mongoose.ObjectId}
@@ -56,28 +56,28 @@ class Project extends Model
     /**
      * @type {User[]}
      */
-    #populatedParticipants = [];
+    #populatedOwners = [];
 
     /**
      * @returns {(User|mongoose.ObjectId)[]}
      */
-    get participants()
+    get owners()
     {
         try
         {
-            this.model.$assertPopulated("participants");
+            this.model.$assertPopulated("owners");
         }
         catch (e)
         {
-            return this.model.get("participants");
+            return this.model.get("owners");
         }
 
-        if (!this.#populatedParticipants.length)
+        if (!this.#populatedOwners.length)
         {
-            this.#populatedParticipants = this.model.get("participants").map(item => new User(item));
+            this.#populatedOwners = this.model.get("owners").map(item => new User(item));
         }
 
-        return this.#populatedParticipants;
+        return this.#populatedOwners;
     }
 
     /**
@@ -97,33 +97,33 @@ class Project extends Model
     }
 
     /**
-     * @param {ProjectBean|ProjectModel} [initial]
+     * @param {LabelBean|LabelModel} [initial]
      */
     constructor(initial)
     {
-        super(initial instanceof ProjectModel ? initial : new ProjectModel(initial));
+        super(initial instanceof LabelModel ? initial : new LabelModel(initial));
     }
 
     /**
      * @param {(User|mongoose.ObjectId)[]|User|mongoose.ObjectId} users
      * @returns {(User|mongoose.ObjectId)[]}
      */
-    addParticipant(users)
+    addOwners(users)
     {
-        return this.model.addParticipant(users);
+        return this.model.addOwners(users);
     }
 
-    clearParticipants()
+    clearOwners()
     {
-        this.model.clearParticipants();
+        this.model.clearOwners();
     }
 
     async populateAll()
     {
-        await this.populate("participants");
+        await this.populate("owners");
     }
 }
 
 module.exports = {
-    Project
+    Label
 };

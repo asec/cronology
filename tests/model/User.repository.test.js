@@ -3,7 +3,7 @@ require("../../config/dotenv").environment("test");
 const {beforeAll, afterAll, test, expect, afterEach} = require("@jest/globals");
 const { User } = require("../../src/model/User/User.class");
 const { UserRepository } = require("./repository/User.repository");
-const Project = require("../../src/model/Project/Project.model");
+const Project = require("../../src/model/Label/Label.model");
 
 const db = require("../db");
 
