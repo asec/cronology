@@ -1,5 +1,5 @@
 "use strict";
-const env = require("../../../config/dotenv");
+const env = require("../../../config/dotenv").environment("test");
 const { test, expect, beforeAll, afterAll } = require("@jest/globals");
 const { UsersRouteGetParameters } = require("../../../src/api/parameters");
 const { Log } = require("../../../src/model/Log");
